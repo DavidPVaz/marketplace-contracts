@@ -1,18 +1,18 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.17;
 
 import 'lib/openzeppelin-contracts/contracts/utils/Strings.sol';
 import 'lib/openzeppelin-contracts/contracts/interfaces/IERC721Metadata.sol';
 import 'lib/openzeppelin-contracts/contracts/interfaces/IERC721Receiver.sol';
 
-contract ERC721 is IERC721Metadata {
+abstract contract ERC721 is IERC721Metadata {
     using Strings for uint256;
 
     error IsZeroAddress();
     error IsInvalidNft();
     error Unauthorized();
     error SelfTarget();
-    error NonERC721TokenReceiver();
+    error NonERC721Receiver();
 
     string private _baseURI;
     string private _name;
@@ -158,7 +158,7 @@ contract ERC721 is IERC721Metadata {
             return;
         }
 
-        _assertIsERC721TokenReceiver(to, from, tokenId, data);
+        _assertIsERC721Receiver(to, from, tokenId, data);
     }
 
     /**
@@ -181,7 +181,7 @@ contract ERC721 is IERC721Metadata {
             return;
         }
 
-        _assertIsERC721TokenReceiver(to, from, tokenId, '');
+        _assertIsERC721Receiver(to, from, tokenId, '');
     }
 
     /**
@@ -260,20 +260,23 @@ contract ERC721 is IERC721Metadata {
         return _operators[owner][operator];
     }
 
+    /* ---------- INTERNAL ---------- */
+
     /**
-     * @notice Mint a new nft
-     * @dev Throws if `to` is the zero address.
+     * @notice Safely mint a new nft
+     * @dev Throws unless `to` is not the zero address and if being a contract, it does implement ERC721Receiver
      *
      * @param to address that will receive the nft
      * @param tokenId The id of the nft
      */
-    function mint(address to, uint256 tokenId) external isNotZeroAddress(to) {
-        _owners[tokenId] = to;
-        unchecked {
-            ++_balances[to];
+    function _safeMint(address to, uint256 tokenId) internal {
+        _mint(to, tokenId);
+
+        if (!_isContract(to)) {
+            return;
         }
 
-        emit Transfer(address(0), to, tokenId);
+        _assertIsERC721Receiver(to, address(0), tokenId, '');
     }
 
     /**
@@ -283,7 +286,7 @@ contract ERC721 is IERC721Metadata {
      *
      * @param tokenId The id of the nft
      */
-    function burn(uint256 tokenId) external isValidNft(tokenId) isTheOwner(msg.sender, tokenId) {
+    function _burn(uint256 tokenId) internal isValidNft(tokenId) isTheOwner(msg.sender, tokenId) {
         delete _approvals[tokenId];
         delete _owners[tokenId];
         unchecked {
@@ -294,6 +297,48 @@ contract ERC721 is IERC721Metadata {
     }
 
     /* ---------- PRIVATE ---------- */
+
+    /**
+     * @notice Check if a contract implements `onERC721Received`
+     * @dev Throws unless `to` implements `onERC721Received`
+     *
+     * @param to The address of the contract
+     * @param previousOwner The address of previous owner
+     * @param tokenId The NFT to transfer
+     * @param data The calldata
+     */
+    function _assertIsERC721Receiver(
+        address to,
+        address previousOwner,
+        uint256 tokenId,
+        bytes memory data
+    ) private {
+        (, bytes memory result) = to.call(
+            abi.encodeWithSelector(IERC721Receiver.onERC721Received.selector, msg.sender, previousOwner, tokenId, data)
+        );
+
+        if (bytes4(result) == IERC721Receiver.onERC721Received.selector) {
+            return;
+        }
+
+        revert NonERC721Receiver();
+    }
+
+    /**
+     * @notice Mint a new nft
+     * @dev Throws if `to` is the zero address.
+     *
+     * @param to address that will receive the nft
+     * @param tokenId The id of the nft
+     */
+    function _mint(address to, uint256 tokenId) private isNotZeroAddress(to) {
+        _owners[tokenId] = to;
+        unchecked {
+            ++_balances[to];
+        }
+
+        emit Transfer(address(0), to, tokenId);
+    }
 
     /**
      * @notice Check if a given address is a contract
@@ -329,32 +374,6 @@ contract ERC721 is IERC721Metadata {
     }
 
     /* ---------- PRIVATE - ASSERTIONS ---------- */
-
-    /**
-     * @notice Check if a contract implements `onERC721Received`
-     * @dev Throws unless `to` implements `onERC721Received`
-     *
-     * @param to The address of the contract
-     * @param previousOwner The address of previous owner
-     * @param tokenId The NFT to transfer
-     * @param data The calldata
-     */
-    function _assertIsERC721TokenReceiver(
-        address to,
-        address previousOwner,
-        uint256 tokenId,
-        bytes memory data
-    ) private {
-        (, bytes memory result) = to.call(
-            abi.encodeWithSelector(IERC721Receiver.onERC721Received.selector, msg.sender, previousOwner, tokenId, data)
-        );
-
-        if (bytes4(result) == IERC721Receiver.onERC721Received.selector) {
-            return;
-        }
-
-        revert NonERC721TokenReceiver();
-    }
 
     /**
      * @notice Check if an address is the zero address
