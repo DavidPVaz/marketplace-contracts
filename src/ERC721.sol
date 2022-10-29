@@ -1,18 +1,20 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-import './IERC165.sol';
-import './IERC721.sol';
-import './IERC721Metadata.sol';
-import './IERC721TokenReceiver.sol';
+import 'lib/openzeppelin-contracts/contracts/utils/Strings.sol';
+import 'lib/openzeppelin-contracts/contracts/interfaces/IERC721Metadata.sol';
+import 'lib/openzeppelin-contracts/contracts/interfaces/IERC721Receiver.sol';
 
-contract ERC721 is IERC165, IERC721Metadata, IERC721 {
+contract ERC721 is IERC721Metadata {
+    using Strings for uint256;
+
     error IsZeroAddress();
     error IsInvalidNft();
     error Unauthorized();
     error SelfTarget();
     error NonERC721TokenReceiver();
 
+    string private _baseURI;
     string private _name;
     string private _symbol;
 
@@ -60,9 +62,14 @@ contract ERC721 is IERC165, IERC721Metadata, IERC721 {
         _;
     }
 
-    constructor(string memory nftName, string memory nftSymbol) {
+    constructor(
+        string memory nftName,
+        string memory nftSymbol,
+        string memory baseURI
+    ) {
         _name = nftName;
         _symbol = nftSymbol;
+        _baseURI = baseURI;
     }
 
     /** @notice Query if a contract implements an interface
@@ -96,7 +103,7 @@ contract ERC721 is IERC165, IERC721Metadata, IERC721 {
      * @param tokenId The identifier for an NFT
      */
     function tokenURI(uint256 tokenId) external view override isValidNft(tokenId) returns (string memory) {
-        return '<some_uri>';
+        return string(abi.encodePacked(_baseURI, tokenId.toString()));
     }
 
     /**
@@ -339,16 +346,10 @@ contract ERC721 is IERC165, IERC721Metadata, IERC721 {
         bytes memory data
     ) private {
         (, bytes memory result) = to.call(
-            abi.encodeWithSelector(
-                IERC721TokenReceiver.onERC721Received.selector,
-                msg.sender,
-                previousOwner,
-                tokenId,
-                data
-            )
+            abi.encodeWithSelector(IERC721Receiver.onERC721Received.selector, msg.sender, previousOwner, tokenId, data)
         );
 
-        if (bytes4(result) == IERC721TokenReceiver.onERC721Received.selector) {
+        if (bytes4(result) == IERC721Receiver.onERC721Received.selector) {
             return;
         }
 

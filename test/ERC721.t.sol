@@ -4,16 +4,16 @@ pragma solidity ^0.8.13;
 import 'forge-std/Test.sol';
 import 'forge-std/console.sol';
 import '../src/ERC721.sol';
-import '../src/IERC721TokenReceiver.sol';
+import 'lib/openzeppelin-contracts/contracts/interfaces/IERC721Receiver.sol';
 
-contract TokenReceiver is IERC721TokenReceiver {
+contract TokenReceiver is IERC721Receiver {
     function onERC721Received(
         address,
         address,
         uint256,
         bytes memory
     ) external pure returns (bytes4) {
-        return IERC721TokenReceiver.onERC721Received.selector;
+        return IERC721Receiver.onERC721Received.selector;
     }
 }
 
@@ -35,7 +35,7 @@ contract ERC721Test is Test {
     function setUp() public {
         tokenId = 0;
         vm.prank(NFT_CONTRACT_OWNER);
-        nftContract = new ERC721('Artemisians', 'ART');
+        nftContract = new ERC721('Artemisians', 'ART', 'https://link/');
     }
 
     function testShouldGetSuportedInterfaces() public {
@@ -84,7 +84,7 @@ contract ERC721Test is Test {
         nftContract.mint(address(2), ++tokenId);
 
         // exercise && verify
-        assertEq(nftContract.tokenURI(tokenId), '<some_uri>');
+        assertEq(nftContract.tokenURI(tokenId), 'https://link/1');
     }
 
     function testShouldNotGetTokenURIOfInvalidToken() public {
