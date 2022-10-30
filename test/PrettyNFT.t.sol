@@ -3,7 +3,7 @@ pragma solidity ^0.8.13;
 
 import 'forge-std/Test.sol';
 import 'forge-std/console.sol';
-import '../src/PrettyNFT.sol';
+import '../src/nft/PrettyNFT.sol';
 import 'lib/openzeppelin-contracts/contracts/interfaces/IERC721Receiver.sol';
 
 contract TokenReceiver is IERC721Receiver {

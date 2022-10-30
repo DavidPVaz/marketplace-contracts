@@ -7,7 +7,7 @@ contract PrettyNFT is ERC721 {
     error IncorrectPayment();
     error NoMoreSupply();
 
-    uint8 public immutable MAX_PRETTY_NFTS;
+    uint8 public immutable MAX_SUPPLY;
     uint8 private tokenIdTracker;
     address payable public owner;
     uint256 private constant MINT_PRICE = 0.0001 ether;
@@ -36,7 +36,7 @@ contract PrettyNFT is ERC721 {
         uint8 maxSupply
     ) ERC721(name, symbol, baseURI) {
         owner = payable(msg.sender);
-        MAX_PRETTY_NFTS = maxSupply;
+        MAX_SUPPLY = maxSupply;
     }
 
     /* ---------- EXTERNAL ----------  */
@@ -81,10 +81,10 @@ contract PrettyNFT is ERC721 {
 
     /**
      * @notice Check if total supply has been reached
-     * @dev Throws unless the next token id is not bigger than `MAX_PRETTY_NFTS`
+     * @dev Throws unless the next token id is not bigger than `MAX_SUPPLY`
      */
     function _assertItHasSupply() private view {
-        if (tokenIdTracker + 1 <= MAX_PRETTY_NFTS) {
+        if (tokenIdTracker + 1 <= MAX_SUPPLY) {
             return;
         }
 
