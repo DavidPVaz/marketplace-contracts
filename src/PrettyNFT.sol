@@ -9,7 +9,7 @@ contract PrettyNFT is ERC721 {
 
     uint8 public immutable MAX_PRETTY_NFTS;
     uint8 private tokenIdTracker;
-    address payable private owner;
+    address payable public owner;
     uint256 private constant MINT_PRICE = 0.0001 ether;
 
     modifier onlyOwner() {
