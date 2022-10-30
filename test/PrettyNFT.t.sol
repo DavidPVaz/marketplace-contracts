@@ -33,7 +33,12 @@ contract PrettyNFTTest is Test {
 
     function setUp() public {
         vm.prank(PRETTY_CONTRACT_OWNER);
-        pretty = new PrettyNFT('Artemisians', 'ART', 'https://link/', 3);
+        pretty = new PrettyNFT(
+            'Artemisians',
+            'ART',
+            'https://ipfs.io/ipfs/QmX6zL25DrVSGuLzqZDtp2ex9GoKdop9W7mUAxXDUAzYJH/',
+            3
+        );
     }
 
     function testShouldGetSuportedInterfaces() public {
@@ -157,7 +162,7 @@ contract PrettyNFTTest is Test {
         pretty.mint{value: 0.0001 ether}();
 
         // exercise && verify
-        assertEq(pretty.tokenURI(1), 'https://link/1');
+        assertEq(pretty.tokenURI(1), 'https://ipfs.io/ipfs/QmX6zL25DrVSGuLzqZDtp2ex9GoKdop9W7mUAxXDUAzYJH/1');
     }
 
     function testShouldNotGetTokenURIOfInvalidToken() public {
