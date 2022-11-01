@@ -4,7 +4,7 @@ pragma solidity ^0.8.17;
 import 'forge-std/Test.sol';
 import 'forge-std/console.sol';
 import '../src/marketplace/Marketplace.sol';
-import '../src/nft/Pepes.sol';
+import '../src/nft/Pretty.sol';
 
 contract MarketplaceTest is Test {
     event Listed(address indexed collection, address indexed seller, uint256 nftId);
@@ -16,19 +16,19 @@ contract MarketplaceTest is Test {
     address public constant PRETTY_MINTER = address(998);
     uint8 public fee = 1;
     Marketplace public marketplace;
-    Pepes public pepes;
+    Pretty public pretty;
 
     function setUp() public {
         vm.prank(MARKETPLACE_CONTRACT_OWNER);
         marketplace = new Marketplace(fee);
 
         vm.prank(CREATOR);
-        pepes = new Pepes('Pepes', 'PEP', 'https://ipfs.io/ipfs/QmX6zL25DrVSGuLzqZDtp2ex9GoKdop9W7mUAxXDUAzYJH/', 2);
+        pretty = new Pretty('Pretty', 'PRT', 'https://ipfs.io/ipfs/QmX6zL25DrVSGuLzqZDtp2ex9GoKdop9W7mUAxXDUAzYJH/', 2);
 
         vm.deal(PRETTY_MINTER, 0.5 ether);
         vm.startPrank(PRETTY_MINTER);
-        pepes.mint{value: 0.0001 ether}();
-        pepes.mint{value: 0.0001 ether}();
+        pretty.mint{value: 0.0001 ether}();
+        pretty.mint{value: 0.0001 ether}();
         vm.stopPrank();
     }
 
@@ -86,7 +86,7 @@ contract MarketplaceTest is Test {
 
     function testShouldAllowToListACollection() public {
         // setup
-        address collection = address(pepes);
+        address collection = address(pretty);
         vm.prank(CREATOR);
 
         // exercise
@@ -101,7 +101,7 @@ contract MarketplaceTest is Test {
 
     function testShouldNotAllowToListACollectionIfNotCreator() public {
         // setup
-        address collection = address(pepes);
+        address collection = address(pretty);
         vm.prank(address(1));
 
         // vm verify
@@ -117,7 +117,7 @@ contract MarketplaceTest is Test {
 
     function testShouldNotAllowToListACollectionIfAlreadyListed() public {
         // setup
-        address collection = address(pepes);
+        address collection = address(pretty);
         vm.startPrank(CREATOR);
         marketplace.listInMarketplace(collection);
 

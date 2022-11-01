@@ -3,7 +3,7 @@ pragma solidity ^0.8.17;
 
 import 'forge-std/Test.sol';
 import 'forge-std/console.sol';
-import '../src/nft/Pepes.sol';
+import '../src/nft/Pretty.sol';
 import 'lib/openzeppelin-contracts/contracts/interfaces/IERC721Receiver.sol';
 
 contract TokenReceiver is IERC721Receiver {
@@ -17,7 +17,7 @@ contract TokenReceiver is IERC721Receiver {
     }
 }
 
-contract PepesTest is Test {
+contract PrettyTest is Test {
     event Transfer(address indexed _from, address indexed _to, uint256 indexed _tokenId);
     event Approval(address indexed _owner, address indexed _approved, uint256 indexed _tokenId);
     event ApprovalForAll(address indexed _owner, address indexed _operator, bool _approved);
@@ -29,28 +29,28 @@ contract PepesTest is Test {
 
     TokenReceiver tokenReceiver = new TokenReceiver();
 
-    Pepes public pepes;
+    Pretty public pretty;
 
     function setUp() public {
         vm.prank(PRETTY_CONTRACT_OWNER);
-        pepes = new Pepes('Pepes', 'PEP', 'https://ipfs.io/ipfs/QmX6zL25DrVSGuLzqZDtp2ex9GoKdop9W7mUAxXDUAzYJH/', 3);
+        pretty = new Pretty('Pretty', 'PRT', 'https://ipfs.io/ipfs/QmX6zL25DrVSGuLzqZDtp2ex9GoKdop9W7mUAxXDUAzYJH/', 3);
     }
 
     function testShouldGetSuportedInterfaces() public {
         // exercise && verify
-        assertTrue(pepes.supportsInterface(IERC721_ID));
-        assertTrue(pepes.supportsInterface(IERC721_METADATA_ID));
-        assertFalse(pepes.supportsInterface(IERC721_TOKEN_RECEIVER_ID));
+        assertTrue(pretty.supportsInterface(IERC721_ID));
+        assertTrue(pretty.supportsInterface(IERC721_METADATA_ID));
+        assertFalse(pretty.supportsInterface(IERC721_TOKEN_RECEIVER_ID));
     }
 
     function testShouldGetName() public {
         // exercise && verify
-        assertEq(pepes.name(), 'Pepes');
+        assertEq(pretty.name(), 'Pretty');
     }
 
     function testShouldGetSymbol() public {
         // exercise && verify
-        assertEq(pepes.symbol(), 'PEP');
+        assertEq(pretty.symbol(), 'PRT');
     }
 
     function testShouldAllowMint() public {
@@ -64,11 +64,11 @@ contract PepesTest is Test {
         emit Transfer(address(0), minter, 1);
 
         // exercise
-        pepes.mint{value: 0.0001 ether}();
+        pretty.mint{value: 0.0001 ether}();
 
         // verify
-        assertEq(pepes.balanceOf(minter), 1);
-        assertEq(pepes.ownerOf(1), minter);
+        assertEq(pretty.balanceOf(minter), 1);
+        assertEq(pretty.ownerOf(1), minter);
     }
 
     function testShouldAllowMintToContractThatImplementsReceiver() public {
@@ -82,11 +82,11 @@ contract PepesTest is Test {
         emit Transfer(address(0), minter, 1);
 
         // exercise
-        pepes.mint{value: 0.0001 ether}();
+        pretty.mint{value: 0.0001 ether}();
 
         // verify
-        assertEq(pepes.balanceOf(minter), 1);
-        assertEq(pepes.ownerOf(1), minter);
+        assertEq(pretty.balanceOf(minter), 1);
+        assertEq(pretty.ownerOf(1), minter);
     }
 
     function testShouldNotAllowMintToContractThatDoesNotImplementReceiver() public {
@@ -99,7 +99,7 @@ contract PepesTest is Test {
         vm.expectRevert(ERC721.NonERC721Receiver.selector);
 
         // exercise
-        pepes.mint{value: 0.0001 ether}();
+        pretty.mint{value: 0.0001 ether}();
     }
 
     function testShouldNotAllowMintIfNotCorrectPayment() public {
@@ -107,10 +107,10 @@ contract PepesTest is Test {
         vm.prank(address(1));
 
         // vm verify
-        vm.expectRevert(Pepes.IncorrectPayment.selector);
+        vm.expectRevert(Pretty.IncorrectPayment.selector);
 
         // exercise
-        pepes.mint();
+        pretty.mint();
     }
 
     function testShouldNotAllowMintIfMintedOut() public {
@@ -124,18 +124,18 @@ contract PepesTest is Test {
         vm.deal(minterThree, 0.5 ether);
         vm.deal(minterFour, 0.5 ether);
         vm.prank(minterOne);
-        pepes.mint{value: 0.0001 ether}();
+        pretty.mint{value: 0.0001 ether}();
         vm.prank(minterTwo);
-        pepes.mint{value: 0.0001 ether}();
+        pretty.mint{value: 0.0001 ether}();
         vm.prank(minterThree);
-        pepes.mint{value: 0.0001 ether}();
+        pretty.mint{value: 0.0001 ether}();
         vm.prank(minterFour);
 
         // vm verify
-        vm.expectRevert(Pepes.NoMoreSupply.selector);
+        vm.expectRevert(Pretty.NoMoreSupply.selector);
 
         // exercise
-        pepes.mint{value: 0.0001 ether}();
+        pretty.mint{value: 0.0001 ether}();
     }
 
     function testShouldNotAllowMintToZeroAddress() public {
@@ -147,17 +147,17 @@ contract PepesTest is Test {
         vm.expectRevert(ERC721.IsZeroAddress.selector);
 
         // exercise
-        pepes.mint{value: 0.0001 ether}();
+        pretty.mint{value: 0.0001 ether}();
     }
 
     function testShouldGetTokenURI() public {
         // setup
         vm.prank(address(2));
         vm.deal(address(2), 0.5 ether);
-        pepes.mint{value: 0.0001 ether}();
+        pretty.mint{value: 0.0001 ether}();
 
         // exercise && verify
-        assertEq(pepes.tokenURI(1), 'https://ipfs.io/ipfs/QmX6zL25DrVSGuLzqZDtp2ex9GoKdop9W7mUAxXDUAzYJH/1');
+        assertEq(pretty.tokenURI(1), 'https://ipfs.io/ipfs/QmX6zL25DrVSGuLzqZDtp2ex9GoKdop9W7mUAxXDUAzYJH/1');
     }
 
     function testShouldNotGetTokenURIOfInvalidToken() public {
@@ -165,7 +165,7 @@ contract PepesTest is Test {
         vm.expectRevert(ERC721.IsInvalidNft.selector);
 
         // exercise
-        pepes.tokenURI(1);
+        pretty.tokenURI(1);
     }
 
     function testShouldGetTheBalanceOfAnOwner() public {
@@ -173,11 +173,11 @@ contract PepesTest is Test {
         address minter = address(2);
         vm.prank(minter);
         vm.deal(minter, 0.5 ether);
-        pepes.mint{value: 0.0001 ether}();
+        pretty.mint{value: 0.0001 ether}();
 
         // exercise && verify
-        assertEq(pepes.balanceOf(minter), 1);
-        assertEq(pepes.balanceOf(address(3)), 0);
+        assertEq(pretty.balanceOf(minter), 1);
+        assertEq(pretty.balanceOf(address(3)), 0);
     }
 
     function testShouldNotGetTheBalanceOfZeroAddress() public {
@@ -185,7 +185,7 @@ contract PepesTest is Test {
         vm.expectRevert(ERC721.IsZeroAddress.selector);
 
         // exercise
-        pepes.balanceOf(address(0));
+        pretty.balanceOf(address(0));
     }
 
     function testShouldGetOwnerOfToken() public {
@@ -193,10 +193,10 @@ contract PepesTest is Test {
         address minter = address(2);
         vm.prank(minter);
         vm.deal(minter, 0.5 ether);
-        pepes.mint{value: 0.0001 ether}();
+        pretty.mint{value: 0.0001 ether}();
 
         // exercise && verify
-        assertEq(pepes.ownerOf(1), minter);
+        assertEq(pretty.ownerOf(1), minter);
     }
 
     function testShouldNotGetOwnerOfInvalidToken() public {
@@ -204,7 +204,7 @@ contract PepesTest is Test {
         vm.expectRevert(ERC721.IsInvalidNft.selector);
 
         // exercise
-        pepes.ownerOf(1);
+        pretty.ownerOf(1);
     }
 
     function testShouldAllowBurn() public {
@@ -212,23 +212,23 @@ contract PepesTest is Test {
         address minter = address(2);
         vm.deal(minter, 0.5 ether);
         vm.startPrank(minter);
-        pepes.mint{value: 0.0001 ether}();
+        pretty.mint{value: 0.0001 ether}();
 
         // vm verify
         vm.expectEmit(true, true, true, true);
         emit Transfer(minter, address(0), 1);
 
         // 1º exercise
-        pepes.burn(1);
+        pretty.burn(1);
 
         // verify
-        assertEq(pepes.balanceOf(minter), 0);
+        assertEq(pretty.balanceOf(minter), 0);
 
         // vm verify
         vm.expectRevert(ERC721.IsInvalidNft.selector);
 
         // 2º exercise
-        pepes.ownerOf(1);
+        pretty.ownerOf(1);
 
         // cleanup
         vm.stopPrank();
@@ -239,21 +239,21 @@ contract PepesTest is Test {
         vm.expectRevert(ERC721.IsInvalidNft.selector);
 
         // exercise
-        pepes.burn(1);
+        pretty.burn(1);
     }
 
     function testShouldNotAllowBurnIfNotOwner() public {
         // setup
         vm.prank(address(1));
         vm.deal(address(1), 0.5 ether);
-        pepes.mint{value: 0.0001 ether}();
+        pretty.mint{value: 0.0001 ether}();
         vm.prank(address(2));
 
         // vm verify
         vm.expectRevert(ERC721.Unauthorized.selector);
 
         // exercise
-        pepes.burn(1);
+        pretty.burn(1);
     }
 
     function testShouldGetApproved() public {
@@ -261,10 +261,10 @@ contract PepesTest is Test {
         address minter = address(2);
         vm.deal(minter, 0.5 ether);
         vm.prank(minter);
-        pepes.mint{value: 0.0001 ether}();
+        pretty.mint{value: 0.0001 ether}();
 
         // exercise && verify
-        assertEq(pepes.getApproved(1), address(0));
+        assertEq(pretty.getApproved(1), address(0));
     }
 
     function testShouldNotGetApprovedForInvalidNft() public {
@@ -272,7 +272,7 @@ contract PepesTest is Test {
         vm.expectRevert(ERC721.IsInvalidNft.selector);
 
         // exercise && verify
-        pepes.getApproved(1);
+        pretty.getApproved(1);
     }
 
     function testShouldAllowOwnerToApprove() public {
@@ -280,17 +280,17 @@ contract PepesTest is Test {
         address minter = address(2);
         vm.deal(minter, 0.5 ether);
         vm.startPrank(minter);
-        pepes.mint{value: 0.0001 ether}();
+        pretty.mint{value: 0.0001 ether}();
 
         // vm verify
         vm.expectEmit(true, true, true, true);
         emit Approval(minter, address(this), 1);
 
         // exercise
-        pepes.approve(address(this), 1);
+        pretty.approve(address(this), 1);
 
         // verify
-        assertEq(pepes.getApproved(1), address(this));
+        assertEq(pretty.getApproved(1), address(this));
 
         // cleanup
         vm.stopPrank();
@@ -301,17 +301,17 @@ contract PepesTest is Test {
         address minter = address(2);
         vm.deal(minter, 0.5 ether);
         vm.startPrank(minter);
-        pepes.mint{value: 0.0001 ether}();
+        pretty.mint{value: 0.0001 ether}();
 
         // vm verify
         vm.expectEmit(true, true, true, true);
         emit Approval(minter, address(0), 1);
 
         // exercise
-        pepes.approve(address(0), 1);
+        pretty.approve(address(0), 1);
 
         // verify
-        assertEq(pepes.getApproved(1), address(0));
+        assertEq(pretty.getApproved(1), address(0));
 
         // cleanup
         vm.stopPrank();
@@ -324,9 +324,9 @@ contract PepesTest is Test {
         address approved = address(5);
         vm.deal(minter, 0.5 ether);
         vm.prank(minter);
-        pepes.mint{value: 0.0001 ether}();
+        pretty.mint{value: 0.0001 ether}();
         vm.prank(minter);
-        pepes.setApprovalForAll(operator, true);
+        pretty.setApprovalForAll(operator, true);
 
         vm.prank(operator);
 
@@ -335,23 +335,23 @@ contract PepesTest is Test {
         emit Approval(minter, approved, 1);
 
         // exercise
-        pepes.approve(approved, 1);
+        pretty.approve(approved, 1);
 
         // verify
-        assertEq(pepes.getApproved(1), approved);
+        assertEq(pretty.getApproved(1), approved);
     }
 
     function testShouldNotAllowToApproveIfNotAuthorized() public {
         // setup
         vm.prank(address(2));
         vm.deal(address(2), 0.5 ether);
-        pepes.mint{value: 0.0001 ether}();
+        pretty.mint{value: 0.0001 ether}();
 
         // vm verify
         vm.expectRevert(ERC721.Unauthorized.selector);
 
         // exercise
-        pepes.approve(address(this), 1);
+        pretty.approve(address(this), 1);
     }
 
     function testShouldNotAllowToApproveIfTargetIsMsgSender() public {
@@ -359,13 +359,13 @@ contract PepesTest is Test {
         address minter = address(2);
         vm.deal(minter, 0.5 ether);
         vm.startPrank(minter);
-        pepes.mint{value: 0.0001 ether}();
+        pretty.mint{value: 0.0001 ether}();
 
         // vm verify
         vm.expectRevert(ERC721.SelfTarget.selector);
 
         // exercise
-        pepes.approve(minter, 1);
+        pretty.approve(minter, 1);
 
         // cleanup
         vm.stopPrank();
@@ -377,17 +377,17 @@ contract PepesTest is Test {
         address operator = address(5);
         vm.deal(minter, 0.5 ether);
         vm.startPrank(minter);
-        pepes.mint{value: 0.0001 ether}();
+        pretty.mint{value: 0.0001 ether}();
 
         // vm verify
         vm.expectEmit(true, true, true, true);
         emit ApprovalForAll(minter, operator, true);
 
         // exercise
-        pepes.setApprovalForAll(operator, true);
+        pretty.setApprovalForAll(operator, true);
 
         // verify
-        assertTrue(pepes.isApprovedForAll(minter, operator));
+        assertTrue(pretty.isApprovedForAll(minter, operator));
 
         // cleanup
         vm.stopPrank();
@@ -399,17 +399,17 @@ contract PepesTest is Test {
         address operator = address(5);
         vm.deal(minter, 0.5 ether);
         vm.startPrank(minter);
-        pepes.mint{value: 0.0001 ether}();
+        pretty.mint{value: 0.0001 ether}();
 
         // vm verify
         vm.expectEmit(true, true, true, true);
         emit ApprovalForAll(minter, operator, false);
 
         // exercise
-        pepes.setApprovalForAll(operator, false);
+        pretty.setApprovalForAll(operator, false);
 
         // verify
-        assertFalse(pepes.isApprovedForAll(minter, operator));
+        assertFalse(pretty.isApprovedForAll(minter, operator));
 
         // cleanup
         vm.stopPrank();
@@ -420,7 +420,7 @@ contract PepesTest is Test {
         vm.expectRevert(ERC721.Unauthorized.selector);
 
         // exercise
-        pepes.setApprovalForAll(address(this), true);
+        pretty.setApprovalForAll(address(this), true);
     }
 
     function testShouldNotAllowToSetupApprovalForAllIfSelfTarget() public {
@@ -428,13 +428,13 @@ contract PepesTest is Test {
         address minter = address(2);
         vm.deal(minter, 0.5 ether);
         vm.startPrank(minter);
-        pepes.mint{value: 0.0001 ether}();
+        pretty.mint{value: 0.0001 ether}();
 
         // vm verify
         vm.expectRevert(ERC721.SelfTarget.selector);
 
         // exercise
-        pepes.setApprovalForAll(minter, true);
+        pretty.setApprovalForAll(minter, true);
 
         // cleanup
         vm.stopPrank();
@@ -445,13 +445,13 @@ contract PepesTest is Test {
         address minter = address(2);
         vm.deal(minter, 0.5 ether);
         vm.startPrank(minter);
-        pepes.mint{value: 0.0001 ether}();
+        pretty.mint{value: 0.0001 ether}();
 
         // vm verify
         vm.expectRevert(ERC721.IsZeroAddress.selector);
 
         // exercise
-        pepes.setApprovalForAll(address(0), true);
+        pretty.setApprovalForAll(address(0), true);
 
         // cleanup
         vm.stopPrank();
@@ -463,14 +463,14 @@ contract PepesTest is Test {
         address operator = address(5);
         vm.deal(minter, 0.5 ether);
         vm.startPrank(minter);
-        pepes.mint{value: 0.0001 ether}();
-        pepes.setApprovalForAll(operator, true);
+        pretty.mint{value: 0.0001 ether}();
+        pretty.setApprovalForAll(operator, true);
 
         // exercise && verify
-        assertTrue(pepes.isApprovedForAll(minter, operator));
-        assertFalse(pepes.isApprovedForAll(minter, address(4)));
-        assertFalse(pepes.isApprovedForAll(operator, minter));
-        assertFalse(pepes.isApprovedForAll(address(0), address(7)));
+        assertTrue(pretty.isApprovedForAll(minter, operator));
+        assertFalse(pretty.isApprovedForAll(minter, address(4)));
+        assertFalse(pretty.isApprovedForAll(operator, minter));
+        assertFalse(pretty.isApprovedForAll(address(0), address(7)));
 
         // cleanup
         vm.stopPrank();
@@ -482,20 +482,20 @@ contract PepesTest is Test {
         address to = address(5);
         vm.deal(minter, 0.5 ether);
         vm.startPrank(minter);
-        pepes.mint{value: 0.0001 ether}();
+        pretty.mint{value: 0.0001 ether}();
 
         // vm verify
         vm.expectEmit(true, true, true, true);
         emit Transfer(minter, to, 1);
 
         // exercise
-        pepes.transferFrom(minter, to, 1);
+        pretty.transferFrom(minter, to, 1);
 
         // verify
-        assertEq(pepes.getApproved(1), address(0));
-        assertEq(pepes.balanceOf(minter), 0);
-        assertEq(pepes.balanceOf(to), 1);
-        assertEq(pepes.ownerOf(1), to);
+        assertEq(pretty.getApproved(1), address(0));
+        assertEq(pretty.balanceOf(minter), 0);
+        assertEq(pretty.balanceOf(to), 1);
+        assertEq(pretty.ownerOf(1), to);
 
         // cleanup
         vm.stopPrank();
@@ -508,9 +508,9 @@ contract PepesTest is Test {
         address to = address(5);
         vm.deal(minter, 0.5 ether);
         vm.prank(minter);
-        pepes.mint{value: 0.0001 ether}();
+        pretty.mint{value: 0.0001 ether}();
         vm.prank(minter);
-        pepes.approve(approved, 1);
+        pretty.approve(approved, 1);
         vm.prank(approved);
 
         // vm verify
@@ -518,13 +518,13 @@ contract PepesTest is Test {
         emit Transfer(minter, to, 1);
 
         // exercise
-        pepes.transferFrom(minter, to, 1);
+        pretty.transferFrom(minter, to, 1);
 
         // verify
-        assertEq(pepes.getApproved(1), address(0));
-        assertEq(pepes.balanceOf(minter), 0);
-        assertEq(pepes.balanceOf(to), 1);
-        assertEq(pepes.ownerOf(1), to);
+        assertEq(pretty.getApproved(1), address(0));
+        assertEq(pretty.balanceOf(minter), 0);
+        assertEq(pretty.balanceOf(to), 1);
+        assertEq(pretty.ownerOf(1), to);
     }
 
     function testShouldAllowTransferFromIfAllowedOperator() public {
@@ -534,9 +534,9 @@ contract PepesTest is Test {
         address to = address(5);
         vm.deal(minter, 0.5 ether);
         vm.prank(minter);
-        pepes.mint{value: 0.0001 ether}();
+        pretty.mint{value: 0.0001 ether}();
         vm.prank(minter);
-        pepes.setApprovalForAll(operator, true);
+        pretty.setApprovalForAll(operator, true);
         vm.prank(operator);
 
         // vm verify
@@ -544,13 +544,13 @@ contract PepesTest is Test {
         emit Transfer(minter, to, 1);
 
         // exercise
-        pepes.transferFrom(minter, to, 1);
+        pretty.transferFrom(minter, to, 1);
 
         // verify
-        assertEq(pepes.getApproved(1), address(0));
-        assertEq(pepes.balanceOf(minter), 0);
-        assertEq(pepes.balanceOf(to), 1);
-        assertEq(pepes.ownerOf(1), to);
+        assertEq(pretty.getApproved(1), address(0));
+        assertEq(pretty.balanceOf(minter), 0);
+        assertEq(pretty.balanceOf(to), 1);
+        assertEq(pretty.ownerOf(1), to);
     }
 
     function testShouldNotAllowTransferFromIfNotAuthorized() public {
@@ -559,17 +559,17 @@ contract PepesTest is Test {
         address to = address(5);
         vm.prank(minter);
         vm.deal(minter, 0.5 ether);
-        pepes.mint{value: 0.0001 ether}();
+        pretty.mint{value: 0.0001 ether}();
 
         // vm verify
         vm.expectRevert(ERC721.Unauthorized.selector);
 
         // exercise
-        pepes.transferFrom(minter, to, 1);
+        pretty.transferFrom(minter, to, 1);
 
         // verify
-        assertEq(pepes.balanceOf(minter), 1);
-        assertEq(pepes.ownerOf(1), minter);
+        assertEq(pretty.balanceOf(minter), 1);
+        assertEq(pretty.ownerOf(1), minter);
     }
 
     function testShouldNotAllowTransferFromIfInvalidNft() public {
@@ -577,7 +577,7 @@ contract PepesTest is Test {
         vm.expectRevert(ERC721.IsInvalidNft.selector);
 
         // exercise
-        pepes.transferFrom(address(1), address(2), 1);
+        pretty.transferFrom(address(1), address(2), 1);
     }
 
     function testShouldNotAllowTransferFromIfToZeroAddress() public {
@@ -585,13 +585,13 @@ contract PepesTest is Test {
         address minter = address(2);
         vm.deal(minter, 0.5 ether);
         vm.prank(minter);
-        pepes.mint{value: 0.0001 ether}();
+        pretty.mint{value: 0.0001 ether}();
 
         // vm verify
         vm.expectRevert(ERC721.IsZeroAddress.selector);
 
         // exercise
-        pepes.transferFrom(minter, address(0), 1);
+        pretty.transferFrom(minter, address(0), 1);
     }
 
     function testShouldNotAllowTransferFromIfFromIsNotTheOwner() public {
@@ -599,13 +599,13 @@ contract PepesTest is Test {
         address minter = address(2);
         vm.prank(minter);
         vm.deal(minter, 0.5 ether);
-        pepes.mint{value: 0.0001 ether}();
+        pretty.mint{value: 0.0001 ether}();
 
         // vm verify
         vm.expectRevert(ERC721.Unauthorized.selector);
 
         // exercise
-        pepes.transferFrom(address(1), address(10), 1);
+        pretty.transferFrom(address(1), address(10), 1);
     }
 
     function testShouldAllowSafeTransferFromIfOnwer() public {
@@ -614,20 +614,20 @@ contract PepesTest is Test {
         address to = address(5);
         vm.deal(minter, 0.5 ether);
         vm.startPrank(minter);
-        pepes.mint{value: 0.0001 ether}();
+        pretty.mint{value: 0.0001 ether}();
 
         // vm verify
         vm.expectEmit(true, true, true, true);
         emit Transfer(minter, to, 1);
 
         // exercise
-        pepes.safeTransferFrom(minter, to, 1);
+        pretty.safeTransferFrom(minter, to, 1);
 
         // verify
-        assertEq(pepes.getApproved(1), address(0));
-        assertEq(pepes.balanceOf(minter), 0);
-        assertEq(pepes.balanceOf(to), 1);
-        assertEq(pepes.ownerOf(1), to);
+        assertEq(pretty.getApproved(1), address(0));
+        assertEq(pretty.balanceOf(minter), 0);
+        assertEq(pretty.balanceOf(to), 1);
+        assertEq(pretty.ownerOf(1), to);
     }
 
     function testShouldAllowSafeTransferFromIfApproved() public {
@@ -637,9 +637,9 @@ contract PepesTest is Test {
         address to = address(5);
         vm.deal(minter, 0.5 ether);
         vm.prank(minter);
-        pepes.mint{value: 0.0001 ether}();
+        pretty.mint{value: 0.0001 ether}();
         vm.prank(minter);
-        pepes.approve(approved, 1);
+        pretty.approve(approved, 1);
         vm.prank(approved);
 
         // vm verify
@@ -647,13 +647,13 @@ contract PepesTest is Test {
         emit Transfer(minter, to, 1);
 
         // exercise
-        pepes.safeTransferFrom(minter, to, 1);
+        pretty.safeTransferFrom(minter, to, 1);
 
         // verify
-        assertEq(pepes.getApproved(1), address(0));
-        assertEq(pepes.balanceOf(minter), 0);
-        assertEq(pepes.balanceOf(to), 1);
-        assertEq(pepes.ownerOf(1), to);
+        assertEq(pretty.getApproved(1), address(0));
+        assertEq(pretty.balanceOf(minter), 0);
+        assertEq(pretty.balanceOf(to), 1);
+        assertEq(pretty.ownerOf(1), to);
     }
 
     function testShouldAllowSafeTransferFromIfAllowedOperator() public {
@@ -663,9 +663,9 @@ contract PepesTest is Test {
         address to = address(5);
         vm.deal(minter, 0.5 ether);
         vm.prank(minter);
-        pepes.mint{value: 0.0001 ether}();
+        pretty.mint{value: 0.0001 ether}();
         vm.prank(minter);
-        pepes.setApprovalForAll(operator, true);
+        pretty.setApprovalForAll(operator, true);
         vm.prank(operator);
 
         // vm verify
@@ -673,13 +673,13 @@ contract PepesTest is Test {
         emit Transfer(minter, to, 1);
 
         // exercise
-        pepes.safeTransferFrom(minter, to, 1);
+        pretty.safeTransferFrom(minter, to, 1);
 
         // verify
-        assertEq(pepes.getApproved(1), address(0));
-        assertEq(pepes.balanceOf(minter), 0);
-        assertEq(pepes.balanceOf(to), 1);
-        assertEq(pepes.ownerOf(1), to);
+        assertEq(pretty.getApproved(1), address(0));
+        assertEq(pretty.balanceOf(minter), 0);
+        assertEq(pretty.balanceOf(to), 1);
+        assertEq(pretty.ownerOf(1), to);
     }
 
     function testShouldAllowSafeTransferFromToATokenReceiverContract() public {
@@ -688,20 +688,20 @@ contract PepesTest is Test {
         address to = address(tokenReceiver);
         vm.deal(minter, 0.5 ether);
         vm.startPrank(minter);
-        pepes.mint{value: 0.0001 ether}();
+        pretty.mint{value: 0.0001 ether}();
 
         // vm verify
         vm.expectEmit(true, true, true, true);
         emit Transfer(minter, to, 1);
 
         // exercise
-        pepes.safeTransferFrom(minter, to, 1);
+        pretty.safeTransferFrom(minter, to, 1);
 
         // verify
-        assertEq(pepes.getApproved(1), address(0));
-        assertEq(pepes.balanceOf(minter), 0);
-        assertEq(pepes.balanceOf(to), 1);
-        assertEq(pepes.ownerOf(1), to);
+        assertEq(pretty.getApproved(1), address(0));
+        assertEq(pretty.balanceOf(minter), 0);
+        assertEq(pretty.balanceOf(to), 1);
+        assertEq(pretty.ownerOf(1), to);
 
         // cleanup
         vm.stopPrank();
@@ -712,17 +712,17 @@ contract PepesTest is Test {
         address minter = address(2);
         vm.deal(minter, 0.5 ether);
         vm.startPrank(minter);
-        pepes.mint{value: 0.0001 ether}();
+        pretty.mint{value: 0.0001 ether}();
 
         // vm verify
         vm.expectRevert(ERC721.NonERC721Receiver.selector);
 
         // exercise
-        pepes.safeTransferFrom(minter, address(this), 1);
+        pretty.safeTransferFrom(minter, address(this), 1);
 
         // verify
-        assertEq(pepes.balanceOf(minter), 1);
-        assertEq(pepes.ownerOf(1), minter);
+        assertEq(pretty.balanceOf(minter), 1);
+        assertEq(pretty.ownerOf(1), minter);
 
         // cleanup
         vm.stopPrank();
@@ -734,17 +734,17 @@ contract PepesTest is Test {
         address to = address(5);
         vm.deal(minter, 0.5 ether);
         vm.prank(minter);
-        pepes.mint{value: 0.0001 ether}();
+        pretty.mint{value: 0.0001 ether}();
 
         // vm verify
         vm.expectRevert(ERC721.Unauthorized.selector);
 
         // exercise
-        pepes.safeTransferFrom(minter, to, 1);
+        pretty.safeTransferFrom(minter, to, 1);
 
         // verify
-        assertEq(pepes.balanceOf(minter), 1);
-        assertEq(pepes.ownerOf(1), minter);
+        assertEq(pretty.balanceOf(minter), 1);
+        assertEq(pretty.ownerOf(1), minter);
     }
 
     function testShouldNotAllowSafeTransferFromIfInvalidNft() public {
@@ -752,7 +752,7 @@ contract PepesTest is Test {
         vm.expectRevert(ERC721.IsInvalidNft.selector);
 
         // exercise
-        pepes.safeTransferFrom(address(1), address(2), 1);
+        pretty.safeTransferFrom(address(1), address(2), 1);
     }
 
     function testShouldNotAllowSafeTransferFromIfToZeroAddress() public {
@@ -760,13 +760,13 @@ contract PepesTest is Test {
         address minter = address(2);
         vm.deal(minter, 0.5 ether);
         vm.prank(minter);
-        pepes.mint{value: 0.0001 ether}();
+        pretty.mint{value: 0.0001 ether}();
 
         // vm verify
         vm.expectRevert(ERC721.IsZeroAddress.selector);
 
         // exercise
-        pepes.safeTransferFrom(minter, address(0), 1);
+        pretty.safeTransferFrom(minter, address(0), 1);
     }
 
     function testShouldNotAllowSafeTransferFromIfFromIsNotTheOwner() public {
@@ -774,22 +774,22 @@ contract PepesTest is Test {
         address minter = address(2);
         vm.deal(minter, 0.5 ether);
         vm.prank(minter);
-        pepes.mint{value: 0.0001 ether}();
+        pretty.mint{value: 0.0001 ether}();
 
         // vm verify
         vm.expectRevert(ERC721.Unauthorized.selector);
 
         // exercise
-        pepes.safeTransferFrom(address(1), address(10), 1);
+        pretty.safeTransferFrom(address(1), address(10), 1);
     }
 
     function testShouldAllowToWithdrawFunds() public {
         // setup
-        vm.deal(address(pepes), 1 ether);
+        vm.deal(address(pretty), 1 ether);
         vm.prank(PRETTY_CONTRACT_OWNER);
 
         // exercise
-        pepes.withdraw();
+        pretty.withdraw();
 
         // verify
         assertEq(PRETTY_CONTRACT_OWNER.balance, 1 ether);
@@ -800,6 +800,6 @@ contract PepesTest is Test {
         vm.expectRevert(ERC721.Unauthorized.selector);
 
         // exercise
-        pepes.withdraw();
+        pretty.withdraw();
     }
 }
