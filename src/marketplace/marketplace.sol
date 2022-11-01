@@ -16,6 +16,7 @@ contract Marketplace {
     struct Collection {
         bool listed;
         address creator;
+        address collection;
     }
 
     struct Listing {
@@ -92,7 +93,11 @@ contract Marketplace {
         _assertIsTheCollectionOwner(collection);
         _assertIsNotListed(collection);
 
-        listedCollections[collection] = collections.push() = Collection({listed: true, creator: msg.sender});
+        listedCollections[collection] = collections.push() = Collection({
+            listed: true,
+            creator: msg.sender,
+            collection: collection
+        });
     }
 
     /**
@@ -125,7 +130,7 @@ contract Marketplace {
      */
     function cancelListing(address collection, uint256 nftId) external locked {
         _assertIsValidCollection(collection);
-        _assertIsNftOwnerOnCancel(collection, nftId);
+        _assertIsNftOwner(collection, nftId);
         _assertNftIsListed(collection, nftId);
 
         delete listings[collection][nftId];
@@ -252,7 +257,7 @@ contract Marketplace {
         (bool success, bytes memory result) = collection.call(abi.encodeWithSignature('ownerOf(uint256)', nftId));
         require(success);
 
-        if (abi.decode(result, (address)) == msg.sender) {
+        if (abi.decode(result, (address)) == msg.sender || listings[collection][nftId].seller == msg.sender) {
             return;
         }
 
@@ -272,21 +277,6 @@ contract Marketplace {
         }
 
         revert AlreadyListed();
-    }
-
-    /**
-     * @notice Assert that `msg.sender` is the seller of `nftId` listing
-     * @dev Throws unless `msg.sender` is the `nftId` seller
-     *
-     * @param collection The contract address of the collection
-     * @param nftId The NFT ID
-     */
-    function _assertIsNftOwnerOnCancel(address collection, uint256 nftId) private view {
-        if (listings[collection][nftId].seller == msg.sender) {
-            return;
-        }
-
-        revert Unauthorized();
     }
 
     /**
