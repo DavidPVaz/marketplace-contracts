@@ -3,7 +3,7 @@ pragma solidity ^0.8.17;
 
 import './ERC721.sol';
 
-contract PrettyNFT is ERC721 {
+contract Pepes is ERC721 {
     error IncorrectPayment();
     error NoMoreSupply();
 

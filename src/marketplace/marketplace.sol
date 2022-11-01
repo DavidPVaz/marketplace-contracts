@@ -25,10 +25,11 @@ contract Marketplace {
     }
 
     bool private lock;
+    uint8 public percentageFee;
     address payable public owner;
-    uint256 public markeplacePercentageFee;
+
     // Listed collections on marketplace - contract addresses
-    Collection[] public collections;
+    Collection[] private collections;
     // collection contract address -> Collection
     mapping(address => Collection) private listedCollections;
 
@@ -51,8 +52,9 @@ contract Marketplace {
         lock = false;
     }
 
-    constructor(uint256 fee) {
-        markeplacePercentageFee = fee;
+    constructor(uint8 fee) {
+        owner = payable(msg.sender);
+        percentageFee = fee;
     }
 
     /**
@@ -60,8 +62,8 @@ contract Marketplace {
      *
      * @param fee The new marketplace fee
      */
-    function setFee(uint256 fee) external onlyOwner {
-        markeplacePercentageFee = fee;
+    function setFee(uint8 fee) external onlyOwner {
+        percentageFee = fee;
     }
 
     /**
@@ -70,6 +72,15 @@ contract Marketplace {
     function withdraw() external onlyOwner {
         (bool success, ) = msg.sender.call{value: address(this).balance}('');
         require(success);
+    }
+
+    /**
+     * @notice Gets marketplace listed collections.
+     *
+     * @return Collection[] the list of collections
+     */
+    function getCollections() external view returns (Collection[] memory) {
+        return collections;
     }
 
     /**
@@ -180,7 +191,7 @@ contract Marketplace {
      * @return uint256 the payout amount to seller minus  marketplace fee
      */
     function _calculatePayout(uint256 price) private view returns (uint256) {
-        return price - price * markeplacePercentageFee;
+        return price - (price * percentageFee) / 100;
     }
 
     /* ---------- PRIVATE - ASSERTIONS ---------- */
