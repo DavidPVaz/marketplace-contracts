@@ -19,16 +19,6 @@ contract Pretty is ERC721 {
         _;
     }
 
-    modifier isCorrectPayment() {
-        _assertIsCorrectPayment();
-        _;
-    }
-
-    modifier itHasSupply() {
-        _assertItHasSupply();
-        _;
-    }
-
     constructor(
         string memory name,
         string memory symbol,
@@ -52,7 +42,10 @@ contract Pretty is ERC721 {
     /**
      * @notice Mint a Pretty NFT
      */
-    function mint() external payable isCorrectPayment itHasSupply {
+    function mint() external payable {
+        _assertIsCorrectPayment();
+        _assertItHasSupply();
+
         _safeMint(msg.sender, ++tokenIdTracker);
     }
 

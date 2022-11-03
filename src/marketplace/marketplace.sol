@@ -2,7 +2,7 @@
 pragma solidity ^0.8.17;
 
 contract Marketplace {
-    event Listed(address indexed collection, address indexed seller, uint256 nftId);
+    event Listed(address indexed collection, address indexed seller, uint256 nftId, uint256 price);
     event CancelListing(address indexed collection, address indexed seller, uint256 nftId);
     event Bought(address indexed collection, address indexed buyer, uint256 nftId, uint256 price);
 
@@ -119,7 +119,7 @@ contract Marketplace {
         _transferNftToMarketplace(collection, nftId);
         listings[collection][nftId] = Listing({active: true, seller: msg.sender, price: price});
 
-        emit Listed(collection, msg.sender, nftId);
+        emit Listed(collection, msg.sender, nftId, price);
     }
 
     /**

@@ -27,41 +27,6 @@ abstract contract ERC721 is IERC721Metadata {
     // token id -> approved
     mapping(uint256 => address) private _approvals;
 
-    modifier isNotZeroAddress(address target) {
-        _assertIsNotZeroAddress(target);
-        _;
-    }
-
-    modifier isValidNft(uint256 tokenId) {
-        _assertIsValidNft(tokenId);
-        _;
-    }
-
-    modifier itCanApprove(uint256 tokenId) {
-        _assertItCanApprove(tokenId);
-        _;
-    }
-
-    modifier itCanTransfer(uint256 tokenId) {
-        _assertItCanTransfer(tokenId);
-        _;
-    }
-
-    modifier isAnOwner() {
-        _assertIsAnOwner();
-        _;
-    }
-
-    modifier isNotSelf(address target) {
-        _assertIsNotSelf(target);
-        _;
-    }
-
-    modifier isTheOwner(address target, uint256 tokenId) {
-        _assertIsTheOwner(target, tokenId);
-        _;
-    }
-
     constructor(
         string memory nftName,
         string memory nftSymbol,
@@ -102,7 +67,9 @@ abstract contract ERC721 is IERC721Metadata {
      * 3986. The URI may point to a JSON file that conforms to the "ERC721 Metadata JSON Schema".
      * @param tokenId The identifier for an NFT
      */
-    function tokenURI(uint256 tokenId) external view override isValidNft(tokenId) returns (string memory) {
+    function tokenURI(uint256 tokenId) external view override returns (string memory) {
+        _assertIsValidNft(tokenId);
+
         return string(abi.encodePacked(_baseURI, tokenId.toString()));
     }
 
@@ -115,7 +82,9 @@ abstract contract ERC721 is IERC721Metadata {
      *
      * @return uint256 number of NFTs owned by `_owner`, possibly zero
      */
-    function balanceOf(address owner) external view override isNotZeroAddress(owner) returns (uint256) {
+    function balanceOf(address owner) external view override returns (uint256) {
+        _assertIsNotZeroAddress(owner);
+
         return _balances[owner];
     }
 
@@ -127,7 +96,9 @@ abstract contract ERC721 is IERC721Metadata {
      *
      * @return address address of the owner of the NFT
      */
-    function ownerOf(uint256 tokenId) external view override isValidNft(tokenId) returns (address) {
+    function ownerOf(uint256 tokenId) external view override returns (address) {
+        _assertIsValidNft(tokenId);
+
         return _owners[tokenId];
     }
 
@@ -151,7 +122,12 @@ abstract contract ERC721 is IERC721Metadata {
         address to,
         uint256 tokenId,
         bytes calldata data
-    ) external override isValidNft(tokenId) isNotZeroAddress(to) isTheOwner(from, tokenId) itCanTransfer(tokenId) {
+    ) external override {
+        _assertIsValidNft(tokenId);
+        _assertIsNotZeroAddress(to);
+        _assertIsTheOwner(from, tokenId);
+        _assertItCanTransfer(tokenId);
+
         _transfer(from, to, tokenId);
 
         if (!_isContract(to)) {
@@ -174,7 +150,12 @@ abstract contract ERC721 is IERC721Metadata {
         address from,
         address to,
         uint256 tokenId
-    ) external override isValidNft(tokenId) isNotZeroAddress(to) isTheOwner(from, tokenId) itCanTransfer(tokenId) {
+    ) external override {
+        _assertIsValidNft(tokenId);
+        _assertIsNotZeroAddress(to);
+        _assertIsTheOwner(from, tokenId);
+        _assertItCanTransfer(tokenId);
+
         _transfer(from, to, tokenId);
 
         if (!_isContract(to)) {
@@ -199,7 +180,12 @@ abstract contract ERC721 is IERC721Metadata {
         address from,
         address to,
         uint256 tokenId
-    ) external override isValidNft(tokenId) isNotZeroAddress(to) isTheOwner(from, tokenId) itCanTransfer(tokenId) {
+    ) external override {
+        _assertIsValidNft(tokenId);
+        _assertIsNotZeroAddress(to);
+        _assertIsTheOwner(from, tokenId);
+        _assertItCanTransfer(tokenId);
+
         _transfer(from, to, tokenId);
     }
 
@@ -211,7 +197,10 @@ abstract contract ERC721 is IERC721Metadata {
      * @param approved The new approved NFT controller
      * @param tokenId The NFT to approve
      */
-    function approve(address approved, uint256 tokenId) external override itCanApprove(tokenId) isNotSelf(approved) {
+    function approve(address approved, uint256 tokenId) external override {
+        _assertItCanApprove(tokenId);
+        _assertIsNotSelf(approved);
+
         _approvals[tokenId] = approved;
 
         emit Approval(_owners[tokenId], approved, tokenId);
@@ -224,13 +213,11 @@ abstract contract ERC721 is IERC721Metadata {
      * @param operator address to add to the set of authorized operators
      * @param approved true if the operator is approved, false to revoke approval
      */
-    function setApprovalForAll(address operator, bool approved)
-        external
-        override
-        isAnOwner
-        isNotSelf(operator)
-        isNotZeroAddress(operator)
-    {
+    function setApprovalForAll(address operator, bool approved) external override {
+        _assertIsAnOwner();
+        _assertIsNotSelf(operator);
+        _assertIsNotZeroAddress(operator);
+
         _operators[msg.sender][operator] = approved;
 
         emit ApprovalForAll(msg.sender, operator, approved);
@@ -244,7 +231,9 @@ abstract contract ERC721 is IERC721Metadata {
      *
      * @return address approved address for this NFT, or the zero address if there is none
      */
-    function getApproved(uint256 tokenId) external view override isValidNft(tokenId) returns (address) {
+    function getApproved(uint256 tokenId) external view override returns (address) {
+        _assertIsValidNft(tokenId);
+
         return _approvals[tokenId];
     }
 
@@ -286,7 +275,10 @@ abstract contract ERC721 is IERC721Metadata {
      *
      * @param tokenId The id of the nft
      */
-    function _burn(uint256 tokenId) internal isValidNft(tokenId) isTheOwner(msg.sender, tokenId) {
+    function _burn(uint256 tokenId) internal {
+        _assertIsValidNft(tokenId);
+        _assertIsTheOwner(msg.sender, tokenId);
+
         delete _approvals[tokenId];
         delete _owners[tokenId];
         unchecked {
@@ -331,7 +323,9 @@ abstract contract ERC721 is IERC721Metadata {
      * @param to address that will receive the nft
      * @param tokenId The id of the nft
      */
-    function _mint(address to, uint256 tokenId) private isNotZeroAddress(to) {
+    function _mint(address to, uint256 tokenId) private {
+        _assertIsNotZeroAddress(to);
+
         _owners[tokenId] = to;
         unchecked {
             ++_balances[to];

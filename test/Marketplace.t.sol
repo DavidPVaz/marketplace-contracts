@@ -7,7 +7,7 @@ import '../src/marketplace/Marketplace.sol';
 import '../src/nft/Pretty.sol';
 
 contract MarketplaceTest is Test {
-    event Listed(address indexed collection, address indexed seller, uint256 nftId);
+    event Listed(address indexed collection, address indexed seller, uint256 nftId, uint256 price);
     event CancelListing(address indexed collection, address indexed seller, uint256 nftId);
     event Bought(address indexed collection, address indexed buyer, uint256 nftId, uint256 price);
 
@@ -150,7 +150,7 @@ contract MarketplaceTest is Test {
 
         // vm verify
         vm.expectEmit(true, true, false, true);
-        emit Listed(collection, PRETTY_MINTER, nftId);
+        emit Listed(collection, PRETTY_MINTER, nftId, price);
 
         // exercise
         marketplace.list(collection, nftId, price);
