@@ -88,14 +88,15 @@ contract Marketplace {
      * @notice Allows a `collection` owner to list his collection in marketplace
      *
      * @param collection The contract address of the collection
+     * @param creator The address of the collection's creator
      */
-    function listInMarketplace(address collection) external locked {
-        _assertIsTheCollectionOwner(collection);
+    function listInMarketplace(address collection, address creator) external onlyOwner {
+        _assertIsTheCollectionOwner(collection, creator);
         _assertIsNotListed(collection);
 
         listedCollections[collection] = collections.push() = Collection({
             listed: true,
-            creator: msg.sender,
+            creator: creator,
             collection: collection
         });
     }
@@ -148,6 +149,7 @@ contract Marketplace {
     function buy(address collection, uint256 nftId) external payable locked {
         _assertIsValidCollection(collection);
         _assertNftIsListed(collection, nftId);
+        _assertIsNotSeller(collection, nftId);
         _assertPaymentIsCorrect(collection, nftId);
 
         Listing memory listing = listings[collection][nftId];
@@ -206,12 +208,13 @@ contract Marketplace {
      * @dev Throws unless `msg.sender` is the `collection` owner
      *
      * @param collection The contract address of the collection
+     * @param creator The address of the collection's creator
      */
-    function _assertIsTheCollectionOwner(address collection) private {
+    function _assertIsTheCollectionOwner(address collection, address creator) private {
         (bool success, bytes memory result) = collection.call(abi.encodeWithSignature('owner()'));
         require(success);
 
-        if (abi.decode(result, (address)) == msg.sender) {
+        if (abi.decode(result, (address)) == creator) {
             return;
         }
 
@@ -258,6 +261,21 @@ contract Marketplace {
         require(success);
 
         if (abi.decode(result, (address)) == msg.sender || listings[collection][nftId].seller == msg.sender) {
+            return;
+        }
+
+        revert Unauthorized();
+    }
+
+    /**
+     * @notice Assert that `msg.sender` is not the seller of `nftId` from `collecton`
+     * @dev Throws unless `msg.sender` is not the `nftId` owner
+     *
+     * @param collection The contract address of the collection
+     * @param nftId The NFT ID
+     */
+    function _assertIsNotSeller(address collection, uint256 nftId) private view {
+        if (listings[collection][nftId].seller != msg.sender) {
             return;
         }
 
