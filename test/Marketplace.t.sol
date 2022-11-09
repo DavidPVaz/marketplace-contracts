@@ -132,7 +132,7 @@ contract MarketplaceTest is Test {
         vm.prank(MARKETPLACE_CONTRACT_OWNER);
 
         // exercise
-        marketplace.listInMarketplace(collection, CREATOR);
+        marketplace.listInMarketplace(collection, CREATOR, 2);
 
         // verify
         address[] memory collections = marketplace.getCollections();
@@ -149,7 +149,7 @@ contract MarketplaceTest is Test {
         vm.expectRevert(Marketplace.Unauthorized.selector);
 
         // exercise
-        marketplace.listInMarketplace(collection, address(2));
+        marketplace.listInMarketplace(collection, address(2), 2);
 
         // verify
         address[] memory collections = marketplace.getCollections();
@@ -165,7 +165,7 @@ contract MarketplaceTest is Test {
         vm.expectRevert(Marketplace.Unauthorized.selector);
 
         // exercise
-        marketplace.listInMarketplace(collection, CREATOR);
+        marketplace.listInMarketplace(collection, CREATOR, 2);
 
         // verify
         address[] memory collections = marketplace.getCollections();
@@ -176,13 +176,13 @@ contract MarketplaceTest is Test {
         // setup
         address collection = address(pretty);
         vm.startPrank(MARKETPLACE_CONTRACT_OWNER);
-        marketplace.listInMarketplace(collection, CREATOR);
+        marketplace.listInMarketplace(collection, CREATOR, 2);
 
         // vm verify
         vm.expectRevert(Marketplace.AlreadyListed.selector);
 
         // exercise
-        marketplace.listInMarketplace(collection, CREATOR);
+        marketplace.listInMarketplace(collection, CREATOR, 2);
 
         // verify
         address[] memory collections = marketplace.getCollections();
@@ -198,7 +198,7 @@ contract MarketplaceTest is Test {
         uint256 price = 1 ether;
         address collection = address(pretty);
         vm.prank(MARKETPLACE_CONTRACT_OWNER);
-        marketplace.listInMarketplace(collection, CREATOR);
+        marketplace.listInMarketplace(collection, CREATOR, 2);
         vm.prank(PRETTY_MINTER);
         pretty.approve(address(marketplace), nftId); // setting approve first
         vm.prank(PRETTY_MINTER);
@@ -234,7 +234,7 @@ contract MarketplaceTest is Test {
         uint256 price = 1 ether;
         address collection = address(pretty);
         vm.prank(MARKETPLACE_CONTRACT_OWNER);
-        marketplace.listInMarketplace(collection, CREATOR);
+        marketplace.listInMarketplace(collection, CREATOR, 2);
 
         vm.prank(address(1));
 
@@ -251,7 +251,7 @@ contract MarketplaceTest is Test {
         uint256 price = 1 ether;
         address collection = address(pretty);
         vm.prank(MARKETPLACE_CONTRACT_OWNER);
-        marketplace.listInMarketplace(collection, CREATOR);
+        marketplace.listInMarketplace(collection, CREATOR, 2);
         vm.startPrank(PRETTY_MINTER);
         pretty.approve(address(marketplace), nftId); // setting approve first
         marketplace.list(collection, nftId, price);
@@ -272,7 +272,7 @@ contract MarketplaceTest is Test {
         uint256 price = 1 ether;
         address collection = address(pretty);
         vm.prank(MARKETPLACE_CONTRACT_OWNER);
-        marketplace.listInMarketplace(collection, CREATOR);
+        marketplace.listInMarketplace(collection, CREATOR, 2);
         vm.startPrank(PRETTY_MINTER);
         pretty.approve(address(marketplace), nftId); // setting approve first
         marketplace.list(collection, nftId, price);
@@ -306,7 +306,7 @@ contract MarketplaceTest is Test {
         uint256 nftId = 1;
         address collection = address(pretty);
         vm.prank(MARKETPLACE_CONTRACT_OWNER);
-        marketplace.listInMarketplace(collection, CREATOR);
+        marketplace.listInMarketplace(collection, CREATOR, 2);
         vm.prank(address(1));
 
         // vm verify
@@ -321,7 +321,7 @@ contract MarketplaceTest is Test {
         uint256 nftId = 1;
         address collection = address(pretty);
         vm.prank(MARKETPLACE_CONTRACT_OWNER);
-        marketplace.listInMarketplace(collection, CREATOR);
+        marketplace.listInMarketplace(collection, CREATOR, 2);
         vm.prank(PRETTY_MINTER);
 
         // vm verify
@@ -334,13 +334,14 @@ contract MarketplaceTest is Test {
     function testShouldAllowToBuyNft() public {
         // setup
         uint256 expectedMarketplaceBalance = 0.01 ether;
-        uint256 expectedSellerBalance = 0.99 ether;
+        uint256 expectedCreatorBalance = 0.02 ether;
+        uint256 expectedSellerBalance = 0.97 ether;
         uint256 nftId = 1;
         uint256 price = 1 ether;
         address collection = address(pretty);
         vm.deal(PRETTY_MINTER, 0 ether);
         vm.prank(MARKETPLACE_CONTRACT_OWNER);
-        marketplace.listInMarketplace(collection, CREATOR);
+        marketplace.listInMarketplace(collection, CREATOR, 2);
         vm.prank(PRETTY_MINTER);
         pretty.approve(address(marketplace), nftId); // setting approve first
         vm.prank(PRETTY_MINTER);
@@ -359,6 +360,7 @@ contract MarketplaceTest is Test {
         assertEq(pretty.ownerOf(nftId), BUYER);
         assertEq(address(marketplace).balance, expectedMarketplaceBalance);
         assertEq(PRETTY_MINTER.balance, expectedSellerBalance);
+        assertEq(CREATOR.balance, expectedCreatorBalance);
         assertEq(BUYER.balance, 0);
     }
 
@@ -380,7 +382,7 @@ contract MarketplaceTest is Test {
         uint256 nftId = 1;
         address collection = address(pretty);
         vm.prank(MARKETPLACE_CONTRACT_OWNER);
-        marketplace.listInMarketplace(collection, CREATOR);
+        marketplace.listInMarketplace(collection, CREATOR, 2);
         vm.prank(BUYER);
 
         // vm verify
@@ -396,7 +398,7 @@ contract MarketplaceTest is Test {
         uint256 price = 1 ether;
         address collection = address(pretty);
         vm.prank(MARKETPLACE_CONTRACT_OWNER);
-        marketplace.listInMarketplace(collection, CREATOR);
+        marketplace.listInMarketplace(collection, CREATOR, 2);
         vm.startPrank(PRETTY_MINTER);
         pretty.approve(address(marketplace), nftId); // setting approve first
         marketplace.list(collection, nftId, price);
@@ -417,7 +419,7 @@ contract MarketplaceTest is Test {
         uint256 price = 1 ether;
         address collection = address(pretty);
         vm.prank(MARKETPLACE_CONTRACT_OWNER);
-        marketplace.listInMarketplace(collection, CREATOR);
+        marketplace.listInMarketplace(collection, CREATOR, 2);
         vm.prank(PRETTY_MINTER);
         pretty.approve(address(marketplace), nftId); // setting approve first
         vm.prank(PRETTY_MINTER);

@@ -16,6 +16,7 @@ contract Marketplace {
 
     struct Collection {
         bool listed;
+        uint8 royalties;
         address creator;
         address collection;
     }
@@ -103,11 +104,20 @@ contract Marketplace {
      * @param collection The contract address of the collection
      * @param creator The address of the collection's creator
      */
-    function listInMarketplace(address collection, address creator) external onlyOwner {
+    function listInMarketplace(
+        address collection,
+        address creator,
+        uint8 royalties
+    ) external onlyOwner {
         _assertIsTheCollectionOwner(collection, creator);
         _assertIsNotListed(collection);
 
-        listedCollections[collection] = Collection({listed: true, creator: creator, collection: collection});
+        listedCollections[collection] = Collection({
+            listed: true,
+            royalties: royalties,
+            creator: creator,
+            collection: collection
+        });
         collections.push(collection);
     }
 
@@ -166,8 +176,15 @@ contract Marketplace {
         delete listings[collection][nftId];
         _transferNftToUser(collection, nftId);
 
-        (bool success, ) = payable(listing.seller).call{value: _calculatePayout(listing.price)}('');
-        require(success);
+        Collection memory listed = listedCollections[collection];
+        uint256 creatorFee = _calculateFee(listing.price, listed.royalties);
+        uint256 marketplaceFee = _calculateFee(listing.price, percentageFee);
+
+        (bool sellerPayout, ) = payable(listing.seller).call{value: listing.price - creatorFee - marketplaceFee}('');
+        require(sellerPayout);
+
+        (bool creatorPayout, ) = payable(listed.creator).call{value: creatorFee}('');
+        require(creatorPayout);
 
         emit Bought(collection, msg.sender, nftId, listing.price);
     }
@@ -202,14 +219,15 @@ contract Marketplace {
     }
 
     /**
-     * @notice Calculate the payout to the seller -> Price - Fee
+     * @notice Calculate the total amount of fee for `price`
      *
      * @param price the price of the nft
+     * @param fee the fee
      *
-     * @return uint256 the payout amount to seller minus  marketplace fee
+     * @return uint256 the fee value
      */
-    function _calculatePayout(uint256 price) private view returns (uint256) {
-        return price - (price * percentageFee) / 100;
+    function _calculateFee(uint256 price, uint8 fee) private pure returns (uint256) {
+        return (price * fee) / 100;
     }
 
     /* ---------- PRIVATE - ASSERTIONS ---------- */
