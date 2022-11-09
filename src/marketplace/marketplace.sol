@@ -268,10 +268,14 @@ contract Marketplace {
      * @param nftId The NFT ID
      */
     function _assertIsNftOwner(address collection, uint256 nftId) private {
+        if (listings[collection][nftId].seller == msg.sender) {
+            return;
+        }
+
         (bool success, bytes memory result) = collection.call(abi.encodeWithSignature('ownerOf(uint256)', nftId));
         require(success);
 
-        if (abi.decode(result, (address)) == msg.sender || listings[collection][nftId].seller == msg.sender) {
+        if (abi.decode(result, (address)) == msg.sender) {
             return;
         }
 
