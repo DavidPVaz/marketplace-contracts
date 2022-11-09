@@ -17,7 +17,6 @@ contract Marketplace {
     struct Collection {
         bool listed;
         uint8 royalties;
-        address creator;
         address collection;
     }
 
@@ -90,19 +89,23 @@ contract Marketplace {
     }
 
     /**
-     * @notice Gets marketplace listed collections.
+     * @notice Updates `collection` creator royalties
      *
-     * @return address[] the list of collections
+     * @param collection The contract address of the collection
+     * @param royalties The new creator royalties percentage
      */
-    function getCollections() external view returns (address[] memory) {
-        return collections;
+    function updateCollectionRoyalties(address collection, uint8 royalties) external onlyOwner {
+        _assertIsValidCollection(collection);
+
+        listedCollections[collection].royalties = royalties;
     }
 
     /**
-     * @notice Allows a `collection` owner to list his collection in marketplace
+     * @notice Allows to list a collection in marketplace
      *
      * @param collection The contract address of the collection
      * @param creator The address of the collection's creator
+     * @param royalties The creator royalties percentage
      */
     function listInMarketplace(
         address collection,
@@ -112,13 +115,30 @@ contract Marketplace {
         _assertIsTheCollectionOwner(collection, creator);
         _assertIsNotListed(collection);
 
-        listedCollections[collection] = Collection({
-            listed: true,
-            royalties: royalties,
-            creator: creator,
-            collection: collection
-        });
+        listedCollections[collection] = Collection({listed: true, royalties: royalties, collection: collection});
         collections.push(collection);
+    }
+
+    /**
+     * @notice Gets marketplace listed collections.
+     *
+     * @return address[] the list of collections
+     */
+    function getCollections() external view returns (address[] memory) {
+        return collections;
+    }
+
+    /**
+     * @notice Gets marketplace listed collections.
+     *
+     * @param collection The contract address of the collection
+     *
+     * @return uint8 the collection royalties percentage
+     */
+    function getCollectionRoyalties(address collection) external view returns (uint8) {
+        _assertIsValidCollection(collection);
+
+        return listedCollections[collection].royalties;
     }
 
     /**
@@ -176,14 +196,13 @@ contract Marketplace {
         delete listings[collection][nftId];
         _transferNftToUser(collection, nftId);
 
-        Collection memory listed = listedCollections[collection];
-        uint256 creatorFee = _calculateFee(listing.price, listed.royalties);
+        uint256 creatorFee = _calculateFee(listing.price, listedCollections[collection].royalties);
         uint256 marketplaceFee = _calculateFee(listing.price, percentageFee);
 
         (bool sellerPayout, ) = payable(listing.seller).call{value: listing.price - creatorFee - marketplaceFee}('');
         require(sellerPayout);
 
-        (bool creatorPayout, ) = payable(listed.creator).call{value: creatorFee}('');
+        (bool creatorPayout, ) = payable(_getCollectionOwner(collection)).call{value: creatorFee}('');
         require(creatorPayout);
 
         emit Bought(collection, msg.sender, nftId, listing.price);
@@ -230,6 +249,20 @@ contract Marketplace {
         return (price * fee) / 100;
     }
 
+    /**
+     * @notice Get the owner of a collection
+     *
+     * @param collection The contract address of the collection
+     *
+     * @return address the collection owner
+     */
+    function _getCollectionOwner(address collection) private returns (address) {
+        (bool success, bytes memory result) = collection.call(abi.encodeWithSignature('owner()'));
+        require(success);
+
+        return abi.decode(result, (address));
+    }
+
     /* ---------- PRIVATE - ASSERTIONS ---------- */
 
     /**
@@ -240,10 +273,9 @@ contract Marketplace {
      * @param creator The address of the collection's creator
      */
     function _assertIsTheCollectionOwner(address collection, address creator) private {
-        (bool success, bytes memory result) = collection.call(abi.encodeWithSignature('owner()'));
-        require(success);
+        address result = _getCollectionOwner(collection);
 
-        if (abi.decode(result, (address)) == creator) {
+        if (result == creator) {
             return;
         }
 

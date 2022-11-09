@@ -192,6 +192,57 @@ contract MarketplaceTest is Test {
         vm.stopPrank();
     }
 
+    function testShouldAllowToUpdateRoyalties() public {
+        // setup
+        address collection = address(pretty);
+        vm.startPrank(MARKETPLACE_CONTRACT_OWNER);
+        marketplace.listInMarketplace(collection, CREATOR, 2);
+
+        // exercise
+        marketplace.updateCollectionRoyalties(collection, 5);
+
+        // verify
+        assertEq(marketplace.getCollectionRoyalties(collection), 5);
+
+        // cleanup
+        vm.stopPrank();
+    }
+
+    function testShouldNotGetRoyaltiesOfInvalidCollection() public {
+        // setup
+        address collection = address(pretty);
+
+        // vm verify
+        vm.expectRevert(Marketplace.InvalidCollection.selector);
+
+        // exercise
+        marketplace.getCollectionRoyalties(collection);
+    }
+
+    function testShouldNotAllowToUpdateRoyaltiesIfInvalidCollection() public {
+        // setup
+        address collection = address(pretty);
+        vm.prank(MARKETPLACE_CONTRACT_OWNER);
+
+        // vm verify
+        vm.expectRevert(Marketplace.InvalidCollection.selector);
+
+        // exercise
+        marketplace.updateCollectionRoyalties(collection, 5);
+    }
+
+    function testShouldNotAllowToUpdateRoyaltiesIfNotMarketplaceOwner() public {
+        // setup
+        address collection = address(pretty);
+        vm.prank(address(3));
+
+        // vm verify
+        vm.expectRevert(Marketplace.Unauthorized.selector);
+
+        // exercise
+        marketplace.updateCollectionRoyalties(collection, 5);
+    }
+
     function testShouldAllowToListNft() public {
         // setup
         uint256 nftId = 1;
