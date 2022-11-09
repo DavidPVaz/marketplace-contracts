@@ -12,6 +12,7 @@ contract Marketplace {
     error InvalidCollection();
     error NotListed();
     error InvalidPayment();
+    error IsZeroAddress();
 
     struct Collection {
         bool listed;
@@ -30,10 +31,9 @@ contract Marketplace {
     address payable public owner;
 
     // Listed collections on marketplace - contract addresses
-    Collection[] private collections;
+    address[] private collections;
     // collection contract address -> Collection
     mapping(address => Collection) private listedCollections;
-
     // collection contract address -> nftId -> Listing
     mapping(address => mapping(uint256 => Listing)) private listings;
 
@@ -76,11 +76,22 @@ contract Marketplace {
     }
 
     /**
+     * @notice Transfer ownership of the contract.
+     *
+     * @param newOwner The address of the new owner
+     */
+    function transferOwnership(address newOwner) external onlyOwner {
+        _assertIsNotZeroAddress(newOwner);
+
+        owner = payable(newOwner);
+    }
+
+    /**
      * @notice Gets marketplace listed collections.
      *
-     * @return Collection[] the list of collections
+     * @return address[] the list of collections
      */
-    function getCollections() external view returns (Collection[] memory) {
+    function getCollections() external view returns (address[] memory) {
         return collections;
     }
 
@@ -94,11 +105,8 @@ contract Marketplace {
         _assertIsTheCollectionOwner(collection, creator);
         _assertIsNotListed(collection);
 
-        listedCollections[collection] = collections.push() = Collection({
-            listed: true,
-            creator: creator,
-            collection: collection
-        });
+        listedCollections[collection] = Collection({listed: true, creator: creator, collection: collection});
+        collections.push(collection);
     }
 
     /**
@@ -325,5 +333,19 @@ contract Marketplace {
         }
 
         revert InvalidPayment();
+    }
+
+    /**
+     * @notice Assert that `target` is not the zero address
+     * @dev Throws unless `target` is not the zero address
+     *
+     * @param target The address to verify
+     */
+    function _assertIsNotZeroAddress(address target) private pure {
+        if (target != address(0)) {
+            return;
+        }
+
+        revert IsZeroAddress();
     }
 }

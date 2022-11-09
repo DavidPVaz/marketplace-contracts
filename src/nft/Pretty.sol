@@ -36,7 +36,7 @@ contract Pretty is ERC721 {
      */
     function withdraw() external onlyOwner {
         (bool success, ) = msg.sender.call{value: address(this).balance}('');
-        require(success, 'Withdraw failed');
+        require(success);
     }
 
     /**

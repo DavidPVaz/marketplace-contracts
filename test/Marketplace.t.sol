@@ -85,6 +85,47 @@ contract MarketplaceTest is Test {
         assertEq(address(marketplace).balance, 1 ether);
     }
 
+    function testShouldAllowToTransferOwnership() public {
+        // setup
+        address newOwner = address(5);
+        vm.prank(MARKETPLACE_CONTRACT_OWNER);
+
+        // exercise
+        marketplace.transferOwnership(newOwner);
+
+        // verify
+        assertEq(marketplace.owner(), newOwner);
+    }
+
+    function testShouldNotAllowToTransferOwnershipIfNotOwner() public {
+        // setup
+        address newOwner = address(5);
+        vm.prank(address(5));
+
+        // vm verify
+        vm.expectRevert(Marketplace.Unauthorized.selector);
+
+        // exercise
+        marketplace.transferOwnership(newOwner);
+
+        // verify
+        assertEq(marketplace.owner(), MARKETPLACE_CONTRACT_OWNER);
+    }
+
+    function testShouldNotAllowToTransferOwnershipToZeroAddress() public {
+        // setup
+        vm.prank(MARKETPLACE_CONTRACT_OWNER);
+
+        // vm verify
+        vm.expectRevert(Marketplace.IsZeroAddress.selector);
+
+        // exercise
+        marketplace.transferOwnership(address(0));
+
+        // verify
+        assertEq(marketplace.owner(), MARKETPLACE_CONTRACT_OWNER);
+    }
+
     function testShouldAllowToListACollection() public {
         // setup
         address collection = address(pretty);
@@ -94,11 +135,9 @@ contract MarketplaceTest is Test {
         marketplace.listInMarketplace(collection, CREATOR);
 
         // verify
-        Marketplace.Collection[] memory collections = marketplace.getCollections();
+        address[] memory collections = marketplace.getCollections();
         assertEq(collections.length, 1);
-        assertTrue(collections[0].listed);
-        assertEq(collections[0].creator, CREATOR);
-        assertEq(collections[0].collection, collection);
+        assertEq(collections[0], collection);
     }
 
     function testShouldNotAllowToListACollectionIfCreatorIsWrong() public {
@@ -113,7 +152,7 @@ contract MarketplaceTest is Test {
         marketplace.listInMarketplace(collection, address(2));
 
         // verify
-        Marketplace.Collection[] memory collections = marketplace.getCollections();
+        address[] memory collections = marketplace.getCollections();
         assertEq(collections.length, 0);
     }
 
@@ -129,7 +168,7 @@ contract MarketplaceTest is Test {
         marketplace.listInMarketplace(collection, CREATOR);
 
         // verify
-        Marketplace.Collection[] memory collections = marketplace.getCollections();
+        address[] memory collections = marketplace.getCollections();
         assertEq(collections.length, 0);
     }
 
@@ -146,7 +185,7 @@ contract MarketplaceTest is Test {
         marketplace.listInMarketplace(collection, CREATOR);
 
         // verify
-        Marketplace.Collection[] memory collections = marketplace.getCollections();
+        address[] memory collections = marketplace.getCollections();
         assertEq(collections.length, 1);
 
         // cleanup
