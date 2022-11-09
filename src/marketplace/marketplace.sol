@@ -58,6 +58,8 @@ contract Marketplace {
         percentageFee = fee;
     }
 
+    /* ---------- EXTERNAL ----------  */
+
     /**
      * @notice Set marketplace fee
      *
@@ -171,6 +173,7 @@ contract Marketplace {
     }
 
     /* ---------- PRIVATE ---------- */
+
     /**
      * @notice Transfer `nftId` from `msg.sender` to marketplace
      * @dev It needs to be approved before call

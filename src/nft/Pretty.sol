@@ -40,6 +40,17 @@ contract Pretty is ERC721 {
     }
 
     /**
+     * @notice Transfer ownership of the contract.
+     *
+     * @param newOwner The address of the new owner
+     */
+    function transferOwnership(address newOwner) external onlyOwner {
+        _assertIsNotZeroAddress(newOwner);
+
+        owner = payable(newOwner);
+    }
+
+    /**
      * @notice Mint a Pretty NFT
      */
     function mint() external payable {

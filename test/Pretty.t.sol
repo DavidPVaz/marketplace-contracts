@@ -802,4 +802,45 @@ contract PrettyTest is Test {
         // exercise
         pretty.withdraw();
     }
+
+    function testShouldAllowToTransferOwnership() public {
+        // setup
+        address newOwner = address(5);
+        vm.prank(PRETTY_CONTRACT_OWNER);
+
+        // exercise
+        pretty.transferOwnership(newOwner);
+
+        // verify
+        assertEq(pretty.owner(), newOwner);
+    }
+
+    function testShouldNotAllowToTransferOwnershipIfNotOwner() public {
+        // setup
+        address newOwner = address(5);
+        vm.prank(address(5));
+
+        // vm verify
+        vm.expectRevert(ERC721.Unauthorized.selector);
+
+        // exercise
+        pretty.transferOwnership(newOwner);
+
+        // verify
+        assertEq(pretty.owner(), PRETTY_CONTRACT_OWNER);
+    }
+
+    function testShouldNotAllowToTransferOwnershipToZeroAddress() public {
+        // setup
+        vm.prank(PRETTY_CONTRACT_OWNER);
+
+        // vm verify
+        vm.expectRevert(ERC721.IsZeroAddress.selector);
+
+        // exercise
+        pretty.transferOwnership(address(0));
+
+        // verify
+        assertEq(pretty.owner(), PRETTY_CONTRACT_OWNER);
+    }
 }

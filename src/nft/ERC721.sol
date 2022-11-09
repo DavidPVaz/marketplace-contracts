@@ -37,6 +37,8 @@ abstract contract ERC721 is IERC721Metadata {
         _baseURI = baseURI;
     }
 
+    /* ---------- EXTERNAL ----------  */
+
     /** @notice Query if a contract implements an interface
      * @param interfaceId The interface identifier, as specified in ERC-165
      * @dev Interface identification is specified in ERC-165. This function uses less than 30,000 gas.
@@ -288,6 +290,20 @@ abstract contract ERC721 is IERC721Metadata {
         emit Transfer(msg.sender, address(0), tokenId);
     }
 
+    /**
+     * @notice Check if an address is the zero address
+     * @dev Throws unless `target` is not the zero address
+     *
+     * @param target The address to verify
+     */
+    function _assertIsNotZeroAddress(address target) internal pure {
+        if (target != address(0)) {
+            return;
+        }
+
+        revert IsZeroAddress();
+    }
+
     /* ---------- PRIVATE ---------- */
 
     /**
@@ -368,20 +384,6 @@ abstract contract ERC721 is IERC721Metadata {
     }
 
     /* ---------- PRIVATE - ASSERTIONS ---------- */
-
-    /**
-     * @notice Check if an address is the zero address
-     * @dev Throws unless `target` is not the zero address
-     *
-     * @param target The address to verify
-     */
-    function _assertIsNotZeroAddress(address target) private pure {
-        if (target != address(0)) {
-            return;
-        }
-
-        revert IsZeroAddress();
-    }
 
     /**
      * @notice Check if a NFT is valid
