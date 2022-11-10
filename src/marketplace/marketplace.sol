@@ -3,6 +3,7 @@ pragma solidity ^0.8.17;
 
 contract Marketplace {
     event Listed(address indexed collection, address indexed seller, uint256 nftId, uint256 price);
+    event UpdateListing(address indexed collection, address indexed seller, uint256 nftId, uint256 newPrice);
     event CancelListing(address indexed collection, address indexed seller, uint256 nftId);
     event Bought(address indexed collection, address indexed buyer, uint256 nftId, uint256 price);
 
@@ -161,6 +162,27 @@ contract Marketplace {
         listings[collection][nftId] = Listing({active: true, seller: msg.sender, price: price});
 
         emit Listed(collection, msg.sender, nftId, price);
+    }
+
+    /**
+     * @notice Allow an nft owner to update his listing
+     *
+     * @param collection The contract address of the collection
+     * @param nftId The NFT ID
+     * @param newPrice The listing price
+     */
+    function updateListing(
+        address collection,
+        uint256 nftId,
+        uint256 newPrice
+    ) external locked {
+        _assertIsValidCollection(collection);
+        _assertIsNftOwner(collection, nftId);
+        _assertNftIsListed(collection, nftId);
+
+        listings[collection][nftId].price = newPrice;
+
+        emit UpdateListing(collection, msg.sender, nftId, newPrice);
     }
 
     /**

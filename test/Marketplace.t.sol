@@ -8,6 +8,7 @@ import '../src/nft/Pretty.sol';
 
 contract MarketplaceTest is Test {
     event Listed(address indexed collection, address indexed seller, uint256 nftId, uint256 price);
+    event UpdateListing(address indexed collection, address indexed seller, uint256 nftId, uint256 newPrice);
     event CancelListing(address indexed collection, address indexed seller, uint256 nftId);
     event Bought(address indexed collection, address indexed buyer, uint256 nftId, uint256 price);
 
@@ -315,6 +316,74 @@ contract MarketplaceTest is Test {
 
         // cleanup
         vm.stopPrank();
+    }
+
+    function testShouldAllowToUpdateListing() public {
+        // setup
+        uint256 nftId = 1;
+        uint256 price = 1 ether;
+        uint256 newPrice = 2 ether;
+        address collection = address(pretty);
+        vm.prank(MARKETPLACE_CONTRACT_OWNER);
+        marketplace.listInMarketplace(collection, CREATOR, 2);
+        vm.startPrank(PRETTY_MINTER);
+        pretty.approve(address(marketplace), nftId); // setting approve first
+        marketplace.list(collection, nftId, price);
+
+        // vm verify
+        vm.expectEmit(true, true, false, true);
+        emit UpdateListing(collection, PRETTY_MINTER, nftId, newPrice);
+
+        // exercise
+        marketplace.updateListing(collection, nftId, newPrice);
+
+        // cleanup
+        vm.stopPrank();
+    }
+
+    function testShouldNotAllowToUpdateListingOfInvalidCollection() public {
+        // setup
+        uint256 nftId = 1;
+        uint256 newPrice = 2 ether;
+        address collection = address(pretty);
+
+        // vm verify
+        vm.expectRevert(Marketplace.InvalidCollection.selector);
+
+        // exercise
+        marketplace.updateListing(collection, nftId, newPrice);
+    }
+
+    function testShouldNotAllowToUpdateListingIfNotOwner() public {
+        // setup
+        uint256 nftId = 1;
+        uint256 newPrice = 2 ether;
+        address collection = address(pretty);
+        vm.prank(MARKETPLACE_CONTRACT_OWNER);
+        marketplace.listInMarketplace(collection, CREATOR, 2);
+        vm.prank(address(2));
+
+        // vm verify
+        vm.expectRevert(Marketplace.Unauthorized.selector);
+
+        // exercise
+        marketplace.updateListing(collection, nftId, newPrice);
+    }
+
+    function testShouldNotAllowToUpdateListingIfNotListed() public {
+        // setup
+        uint256 nftId = 1;
+        uint256 newPrice = 2 ether;
+        address collection = address(pretty);
+        vm.prank(MARKETPLACE_CONTRACT_OWNER);
+        marketplace.listInMarketplace(collection, CREATOR, 2);
+        vm.prank(PRETTY_MINTER);
+
+        // vm verify
+        vm.expectRevert(Marketplace.NotListed.selector);
+
+        // exercise
+        marketplace.updateListing(collection, nftId, newPrice);
     }
 
     function testShouldAllowToCancelListing() public {
