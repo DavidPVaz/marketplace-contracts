@@ -3,554 +3,102 @@ pragma solidity ^0.8.17;
 
 import 'forge-std/Test.sol';
 import 'forge-std/console.sol';
+import '../src/marketplace/Marketplace-Implementation.sol';
 import '../src/marketplace/Marketplace.sol';
-import '../src/nft/Pretty.sol';
 
 contract MarketplaceTest is Test {
-    event Listed(address indexed collection, address indexed seller, uint256 nftId, uint256 price);
-    event UpdateListing(address indexed collection, address indexed seller, uint256 nftId, uint256 newPrice);
-    event CancelListing(address indexed collection, address indexed seller, uint256 nftId);
-    event Bought(address indexed collection, address indexed buyer, uint256 nftId, uint256 price);
-
-    address public constant MARKETPLACE_CONTRACT_OWNER = address(1000);
-    address public constant CREATOR = address(999);
-    address public constant PRETTY_MINTER = address(998);
-    address public constant BUYER = address(997);
-    uint8 public fee = 1;
-    Marketplace public marketplace;
-    Pretty public pretty;
+    address public constant ADMIN = address(1000);
+    MarketplaceV1 public implementation;
+    MarketplaceProxy public proxy;
 
     function setUp() public {
-        vm.prank(MARKETPLACE_CONTRACT_OWNER);
-        marketplace = new Marketplace(fee);
-
-        vm.prank(CREATOR);
-        pretty = new Pretty('Pretty', 'PRT', 'https://ipfs.io/ipfs/QmX6zL25DrVSGuLzqZDtp2ex9GoKdop9W7mUAxXDUAzYJH/', 2);
-
-        vm.deal(PRETTY_MINTER, 0.5 ether);
-        vm.startPrank(PRETTY_MINTER);
-        pretty.mint{value: 0.0001 ether}();
-        pretty.mint{value: 0.0001 ether}();
-        vm.stopPrank();
+        implementation = new MarketplaceV1();
     }
 
-    function testShouldAllowToSetFee() public {
+    function testShouldSuccessfullyCreateProxy() public {
         // setup
-        vm.prank(MARKETPLACE_CONTRACT_OWNER);
-        uint8 newFee = 2;
+        uint8 initialFee = 5;
+        vm.startPrank(ADMIN);
 
         // exercise
-        marketplace.setFee(newFee);
+        proxy = new MarketplaceProxy(address(implementation), initialFee);
 
         // verify
-        assertEq(marketplace.percentageFee(), newFee);
-    }
-
-    function testShouldNotAllowToSetFee() public {
-        // setup
-        vm.prank(address(1));
-        uint8 newFee = 2;
-
-        // vm verify
-        vm.expectRevert(Marketplace.Unauthorized.selector);
-
-        // exercise
-        marketplace.setFee(newFee);
-    }
-
-    function testShouldAllowToWithdraw() public {
-        // setup
-        vm.deal(address(marketplace), 1 ether);
-        vm.prank(MARKETPLACE_CONTRACT_OWNER);
-
-        // exercise
-        marketplace.withdraw();
-
-        // verify
-        assertEq(address(marketplace).balance, 0 ether);
-        assertEq(MARKETPLACE_CONTRACT_OWNER.balance, 1 ether);
-    }
-
-    function testShouldNotAllowToWithdraw() public {
-        // setup
-        vm.deal(address(marketplace), 1 ether);
-        vm.prank(address(1));
-
-        // vm verify
-        vm.expectRevert(Marketplace.Unauthorized.selector);
-
-        // exercise
-        marketplace.withdraw();
-
-        // verify
-        assertEq(address(marketplace).balance, 1 ether);
-    }
-
-    function testShouldAllowToTransferOwnership() public {
-        // setup
-        address newOwner = address(5);
-        vm.prank(MARKETPLACE_CONTRACT_OWNER);
-
-        // exercise
-        marketplace.transferOwnership(newOwner);
-
-        // verify
-        assertEq(marketplace.owner(), newOwner);
-    }
-
-    function testShouldNotAllowToTransferOwnershipIfNotOwner() public {
-        // setup
-        address newOwner = address(5);
-        vm.prank(address(5));
-
-        // vm verify
-        vm.expectRevert(Marketplace.Unauthorized.selector);
-
-        // exercise
-        marketplace.transferOwnership(newOwner);
-
-        // verify
-        assertEq(marketplace.owner(), MARKETPLACE_CONTRACT_OWNER);
-    }
-
-    function testShouldNotAllowToTransferOwnershipToZeroAddress() public {
-        // setup
-        vm.prank(MARKETPLACE_CONTRACT_OWNER);
-
-        // vm verify
-        vm.expectRevert(Marketplace.IsZeroAddress.selector);
-
-        // exercise
-        marketplace.transferOwnership(address(0));
-
-        // verify
-        assertEq(marketplace.owner(), MARKETPLACE_CONTRACT_OWNER);
-    }
-
-    function testShouldAllowToListACollection() public {
-        // setup
-        address collection = address(pretty);
-        vm.prank(MARKETPLACE_CONTRACT_OWNER);
-
-        // exercise
-        marketplace.listInMarketplace(collection, CREATOR, 2);
-
-        // verify
-        address[] memory collections = marketplace.getCollections();
-        assertEq(collections.length, 1);
-        assertEq(collections[0], collection);
-    }
-
-    function testShouldNotAllowToListACollectionIfCreatorIsWrong() public {
-        // setup
-        address collection = address(pretty);
-        vm.prank(MARKETPLACE_CONTRACT_OWNER);
-
-        // vm verify
-        vm.expectRevert(Marketplace.Unauthorized.selector);
-
-        // exercise
-        marketplace.listInMarketplace(collection, address(2), 2);
-
-        // verify
-        address[] memory collections = marketplace.getCollections();
-        assertEq(collections.length, 0);
-    }
-
-    function testShouldNotAllowToListACollectionIfNotMarketplaceOwner() public {
-        // setup
-        address collection = address(pretty);
-        vm.prank(address(3));
-
-        // vm verify
-        vm.expectRevert(Marketplace.Unauthorized.selector);
-
-        // exercise
-        marketplace.listInMarketplace(collection, CREATOR, 2);
-
-        // verify
-        address[] memory collections = marketplace.getCollections();
-        assertEq(collections.length, 0);
-    }
-
-    function testShouldNotAllowToListACollectionIfAlreadyListed() public {
-        // setup
-        address collection = address(pretty);
-        vm.startPrank(MARKETPLACE_CONTRACT_OWNER);
-        marketplace.listInMarketplace(collection, CREATOR, 2);
-
-        // vm verify
-        vm.expectRevert(Marketplace.AlreadyListed.selector);
-
-        // exercise
-        marketplace.listInMarketplace(collection, CREATOR, 2);
-
-        // verify
-        address[] memory collections = marketplace.getCollections();
-        assertEq(collections.length, 1);
+        assertEq(proxy.admin(), ADMIN);
+        assertEq(proxy.implementation(), address(implementation));
 
         // cleanup
         vm.stopPrank();
     }
 
-    function testShouldAllowToUpdateRoyalties() public {
+    function testShouldSuccessfullyDelegateCallIfAdmin() public {
         // setup
-        address collection = address(pretty);
-        vm.startPrank(MARKETPLACE_CONTRACT_OWNER);
-        marketplace.listInMarketplace(collection, CREATOR, 2);
+        uint8 initialFee = 5;
+        uint8 newFee = 10;
+        vm.startPrank(ADMIN);
+        proxy = new MarketplaceProxy(address(implementation), initialFee);
 
-        // exercise
-        marketplace.updateCollectionRoyalties(collection, 5);
+        // exercise && verify
+        (bool success, ) = address(proxy).call(abi.encodeWithSignature('setFee(uint8)', newFee));
+        assertTrue(success);
 
-        // verify
-        assertEq(marketplace.getCollectionRoyalties(collection), 5);
+        (, bytes memory updatedFee) = address(proxy).call(abi.encodeWithSignature('percentageFee()'));
+        assertEq(abi.decode(updatedFee, (uint8)), newFee);
 
         // cleanup
         vm.stopPrank();
     }
 
-    function testShouldNotGetRoyaltiesOfInvalidCollection() public {
+    function testShouldSuccessfullyDelegateCallIfNotAdmin() public {
         // setup
-        address collection = address(pretty);
+        uint8 initialFee = 5;
+        vm.prank(ADMIN);
+        proxy = new MarketplaceProxy(address(implementation), initialFee);
 
-        // vm verify
-        vm.expectRevert(Marketplace.InvalidCollection.selector);
+        // exercise && verify
+        (bool successOwnerCall, bytes memory owner) = address(proxy).call(abi.encodeWithSignature('owner()'));
+        assertTrue(successOwnerCall);
+        assertEq(abi.decode(owner, (address)), ADMIN);
 
-        // exercise
-        marketplace.getCollectionRoyalties(collection);
+        (bool successPercentageCall, bytes memory initialPercentageFee) = address(proxy).call(
+            abi.encodeWithSignature('percentageFee()')
+        );
+        assertTrue(successPercentageCall);
+        assertEq(abi.decode(initialPercentageFee, (uint8)), initialFee);
+
+        (bool ok, bytes memory collections) = address(proxy).call(abi.encodeWithSignature('getCollections()'));
+        assertTrue(ok);
+        assertEq(abi.decode(collections, (address[])).length, 0);
+
+        (bool failed, ) = address(proxy).call(abi.encodeWithSignature('doesNotExist()'));
+        assertFalse(failed);
+
+        vm.expectRevert(MarketplaceV1.Unauthorized.selector);
+
+        (bool successfulCall, bytes memory result) = address(proxy).call(abi.encodeWithSignature('setFee(uint8)', 20));
+        assertTrue(successfulCall);
+        assertFalse(abi.decode(result, (bool)));
+
+        vm.expectRevert();
+
+        proxy.implementation();
     }
 
-    function testShouldNotAllowToUpdateRoyaltiesIfInvalidCollection() public {
+    function testShouldSuccessfullyDelegateCallAndFailIfNotAdminOrOwner() public {
         // setup
-        address collection = address(pretty);
-        vm.prank(MARKETPLACE_CONTRACT_OWNER);
+        uint8 initialFee = 5;
+        vm.prank(ADMIN);
+        proxy = new MarketplaceProxy(address(implementation), initialFee);
 
-        // vm verify
-        vm.expectRevert(Marketplace.InvalidCollection.selector);
+        // exercise && verify
+        vm.expectRevert(MarketplaceV1.Unauthorized.selector);
 
-        // exercise
-        marketplace.updateCollectionRoyalties(collection, 5);
-    }
+        (bool successfulCall, bytes memory result) = address(proxy).call(abi.encodeWithSignature('setFee(uint8)', 20));
+        assertTrue(successfulCall);
+        assertFalse(abi.decode(result, (bool)));
 
-    function testShouldNotAllowToUpdateRoyaltiesIfNotMarketplaceOwner() public {
-        // setup
-        address collection = address(pretty);
-        vm.prank(address(3));
+        vm.expectRevert();
 
-        // vm verify
-        vm.expectRevert(Marketplace.Unauthorized.selector);
-
-        // exercise
-        marketplace.updateCollectionRoyalties(collection, 5);
-    }
-
-    function testShouldAllowToListNft() public {
-        // setup
-        uint256 nftId = 1;
-        uint256 price = 1 ether;
-        address collection = address(pretty);
-        vm.prank(MARKETPLACE_CONTRACT_OWNER);
-        marketplace.listInMarketplace(collection, CREATOR, 2);
-        vm.prank(PRETTY_MINTER);
-        pretty.approve(address(marketplace), nftId); // setting approve first
-        vm.prank(PRETTY_MINTER);
-
-        // vm verify
-        vm.expectEmit(true, true, false, true);
-        emit Listed(collection, PRETTY_MINTER, nftId, price);
-
-        // exercise
-        marketplace.list(collection, nftId, price);
-
-        // verify
-        assertEq(pretty.ownerOf(nftId), address(marketplace));
-    }
-
-    function testShouldNotAllowToListInvalidCollection() public {
-        // setup
-        uint256 nftId = 1;
-        uint256 price = 1 ether;
-        address collection = address(pretty);
-        vm.prank(PRETTY_MINTER);
-
-        // vm verify
-        vm.expectRevert(Marketplace.InvalidCollection.selector);
-
-        // exercise
-        marketplace.list(collection, nftId, price);
-    }
-
-    function testShouldNotAllowToListNftIfNotOwner() public {
-        // setup
-        uint256 nftId = 1;
-        uint256 price = 1 ether;
-        address collection = address(pretty);
-        vm.prank(MARKETPLACE_CONTRACT_OWNER);
-        marketplace.listInMarketplace(collection, CREATOR, 2);
-
-        vm.prank(address(1));
-
-        // vm verify
-        vm.expectRevert(Marketplace.Unauthorized.selector);
-
-        // exercise
-        marketplace.list(collection, nftId, price);
-    }
-
-    function testShouldNotAllowToListNftIfAlreadyListed() public {
-        // setup
-        uint256 nftId = 1;
-        uint256 price = 1 ether;
-        address collection = address(pretty);
-        vm.prank(MARKETPLACE_CONTRACT_OWNER);
-        marketplace.listInMarketplace(collection, CREATOR, 2);
-        vm.startPrank(PRETTY_MINTER);
-        pretty.approve(address(marketplace), nftId); // setting approve first
-        marketplace.list(collection, nftId, price);
-
-        // vm verify
-        vm.expectRevert(Marketplace.AlreadyListed.selector);
-
-        // exercise
-        marketplace.list(collection, nftId, price);
-
-        // cleanup
-        vm.stopPrank();
-    }
-
-    function testShouldAllowToUpdateListing() public {
-        // setup
-        uint256 nftId = 1;
-        uint256 price = 1 ether;
-        uint256 newPrice = 2 ether;
-        address collection = address(pretty);
-        vm.prank(MARKETPLACE_CONTRACT_OWNER);
-        marketplace.listInMarketplace(collection, CREATOR, 2);
-        vm.startPrank(PRETTY_MINTER);
-        pretty.approve(address(marketplace), nftId); // setting approve first
-        marketplace.list(collection, nftId, price);
-
-        // vm verify
-        vm.expectEmit(true, true, false, true);
-        emit UpdateListing(collection, PRETTY_MINTER, nftId, newPrice);
-
-        // exercise
-        marketplace.updateListing(collection, nftId, newPrice);
-
-        // cleanup
-        vm.stopPrank();
-    }
-
-    function testShouldNotAllowToUpdateListingOfInvalidCollection() public {
-        // setup
-        uint256 nftId = 1;
-        uint256 newPrice = 2 ether;
-        address collection = address(pretty);
-
-        // vm verify
-        vm.expectRevert(Marketplace.InvalidCollection.selector);
-
-        // exercise
-        marketplace.updateListing(collection, nftId, newPrice);
-    }
-
-    function testShouldNotAllowToUpdateListingIfNotOwner() public {
-        // setup
-        uint256 nftId = 1;
-        uint256 newPrice = 2 ether;
-        address collection = address(pretty);
-        vm.prank(MARKETPLACE_CONTRACT_OWNER);
-        marketplace.listInMarketplace(collection, CREATOR, 2);
-        vm.prank(address(2));
-
-        // vm verify
-        vm.expectRevert(Marketplace.Unauthorized.selector);
-
-        // exercise
-        marketplace.updateListing(collection, nftId, newPrice);
-    }
-
-    function testShouldNotAllowToUpdateListingIfNotListed() public {
-        // setup
-        uint256 nftId = 1;
-        uint256 newPrice = 2 ether;
-        address collection = address(pretty);
-        vm.prank(MARKETPLACE_CONTRACT_OWNER);
-        marketplace.listInMarketplace(collection, CREATOR, 2);
-        vm.prank(PRETTY_MINTER);
-
-        // vm verify
-        vm.expectRevert(Marketplace.NotListed.selector);
-
-        // exercise
-        marketplace.updateListing(collection, nftId, newPrice);
-    }
-
-    function testShouldAllowToCancelListing() public {
-        // setup
-        uint256 nftId = 1;
-        uint256 price = 1 ether;
-        address collection = address(pretty);
-        vm.prank(MARKETPLACE_CONTRACT_OWNER);
-        marketplace.listInMarketplace(collection, CREATOR, 2);
-        vm.startPrank(PRETTY_MINTER);
-        pretty.approve(address(marketplace), nftId); // setting approve first
-        marketplace.list(collection, nftId, price);
-
-        // vm verify
-        vm.expectEmit(true, true, false, true);
-        emit CancelListing(collection, PRETTY_MINTER, nftId);
-
-        // exercise
-        marketplace.cancelListing(collection, nftId);
-
-        // verify
-        assertEq(pretty.ownerOf(nftId), PRETTY_MINTER);
-    }
-
-    function testShouldNotAllowToCancelListingOfInvalidCollection() public {
-        // setup
-        uint256 nftId = 1;
-        address collection = address(pretty);
-        vm.prank(PRETTY_MINTER);
-
-        // vm verify
-        vm.expectRevert(Marketplace.InvalidCollection.selector);
-
-        // exercise
-        marketplace.cancelListing(collection, nftId);
-    }
-
-    function testShouldNotAllowToCancelListingIfNotOwner() public {
-        // setup
-        uint256 nftId = 1;
-        address collection = address(pretty);
-        vm.prank(MARKETPLACE_CONTRACT_OWNER);
-        marketplace.listInMarketplace(collection, CREATOR, 2);
-        vm.prank(address(1));
-
-        // vm verify
-        vm.expectRevert(Marketplace.Unauthorized.selector);
-
-        // exercise
-        marketplace.cancelListing(collection, nftId);
-    }
-
-    function testShouldNotAllowToCancelListingIfNftIsNotListed() public {
-        // setup
-        uint256 nftId = 1;
-        address collection = address(pretty);
-        vm.prank(MARKETPLACE_CONTRACT_OWNER);
-        marketplace.listInMarketplace(collection, CREATOR, 2);
-        vm.prank(PRETTY_MINTER);
-
-        // vm verify
-        vm.expectRevert(Marketplace.NotListed.selector);
-
-        // exercise
-        marketplace.cancelListing(collection, nftId);
-    }
-
-    function testShouldAllowToBuyNft() public {
-        // setup
-        uint256 expectedMarketplaceBalance = 0.01 ether;
-        uint256 expectedCreatorBalance = 0.02 ether;
-        uint256 expectedSellerBalance = 0.97 ether;
-        uint256 nftId = 1;
-        uint256 price = 1 ether;
-        address collection = address(pretty);
-        vm.deal(PRETTY_MINTER, 0 ether);
-        vm.prank(MARKETPLACE_CONTRACT_OWNER);
-        marketplace.listInMarketplace(collection, CREATOR, 2);
-        vm.prank(PRETTY_MINTER);
-        pretty.approve(address(marketplace), nftId); // setting approve first
-        vm.prank(PRETTY_MINTER);
-        marketplace.list(collection, nftId, price);
-        vm.deal(BUYER, price);
-        vm.prank(BUYER);
-
-        // vm verify
-        vm.expectEmit(true, true, false, true);
-        emit Bought(collection, BUYER, nftId, price);
-
-        // exercise
-        marketplace.buy{value: price}(collection, nftId);
-
-        // verify
-        assertEq(pretty.ownerOf(nftId), BUYER);
-        assertEq(address(marketplace).balance, expectedMarketplaceBalance);
-        assertEq(PRETTY_MINTER.balance, expectedSellerBalance);
-        assertEq(CREATOR.balance, expectedCreatorBalance);
-        assertEq(BUYER.balance, 0);
-    }
-
-    function testShouldNotAllowToBuyInvalidCollection() public {
-        // setup
-        uint256 nftId = 1;
-        address collection = address(pretty);
-        vm.prank(BUYER);
-
-        // vm verify
-        vm.expectRevert(Marketplace.InvalidCollection.selector);
-
-        // exercise
-        marketplace.buy(collection, nftId);
-    }
-
-    function testShouldNotAllowToBuyIfNftIsNotListed() public {
-        // setup
-        uint256 nftId = 1;
-        address collection = address(pretty);
-        vm.prank(MARKETPLACE_CONTRACT_OWNER);
-        marketplace.listInMarketplace(collection, CREATOR, 2);
-        vm.prank(BUYER);
-
-        // vm verify
-        vm.expectRevert(Marketplace.NotListed.selector);
-
-        // exercise
-        marketplace.buy(collection, nftId);
-    }
-
-    function testShouldNotAllowToBuyIfBuyerIsSeller() public {
-        // setup
-        uint256 nftId = 1;
-        uint256 price = 1 ether;
-        address collection = address(pretty);
-        vm.prank(MARKETPLACE_CONTRACT_OWNER);
-        marketplace.listInMarketplace(collection, CREATOR, 2);
-        vm.startPrank(PRETTY_MINTER);
-        pretty.approve(address(marketplace), nftId); // setting approve first
-        marketplace.list(collection, nftId, price);
-
-        // vm verify
-        vm.expectRevert(Marketplace.Unauthorized.selector);
-
-        // exercise
-        marketplace.buy(collection, nftId);
-
-        // cleanup
-        vm.stopPrank();
-    }
-
-    function testShouldNotAllowToBuyIfNotCorrectPayment() public {
-        // setup
-        uint256 nftId = 1;
-        uint256 price = 1 ether;
-        address collection = address(pretty);
-        vm.prank(MARKETPLACE_CONTRACT_OWNER);
-        marketplace.listInMarketplace(collection, CREATOR, 2);
-        vm.prank(PRETTY_MINTER);
-        pretty.approve(address(marketplace), nftId); // setting approve first
-        vm.prank(PRETTY_MINTER);
-        marketplace.list(collection, nftId, price);
-        vm.deal(BUYER, 0.5 ether);
-        vm.prank(BUYER);
-
-        // vm verify
-        vm.expectRevert(Marketplace.InvalidPayment.selector);
-
-        // exercise
-        marketplace.buy{value: 0.5 ether}(collection, nftId);
+        proxy.implementation();
     }
 }
