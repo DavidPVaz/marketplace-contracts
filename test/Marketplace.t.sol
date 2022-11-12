@@ -5,14 +5,24 @@ import 'forge-std/Test.sol';
 import 'forge-std/console.sol';
 import '../src/marketplace/Implementation.sol';
 import '../src/marketplace/Marketplace.sol';
+import '../src/nft/Pretty.sol';
 
 contract MarketplaceTest is Test {
     address public constant ADMIN = address(1000);
     MarketplaceV1 public implementation;
     MarketplaceProxy public proxy;
+    Pretty public collection;
 
     function setUp() public {
         implementation = new MarketplaceV1();
+
+        vm.prank(ADMIN);
+        collection = new Pretty(
+            'Pretty',
+            'PRT',
+            'https://ipfs.io/ipfs/QmX6zL25DrVSGuLzqZDtp2ex9GoKdop9W7mUAxXDUAzYJH/',
+            3
+        );
     }
 
     function testShouldSuccessfullyCreateProxy() public {
@@ -44,6 +54,26 @@ contract MarketplaceTest is Test {
 
         (, bytes memory updatedFee) = address(proxy).call(abi.encodeWithSignature('percentageFee()'));
         assertEq(abi.decode(updatedFee, (uint8)), newFee);
+
+        // cleanup
+        vm.stopPrank();
+    }
+
+    function testShouldSuccessfullyListACollectionInMarketplace() public {
+        // setup
+        uint8 initialFee = 5;
+        vm.startPrank(ADMIN);
+        proxy = new MarketplaceProxy(address(implementation), initialFee);
+
+        // exercise && verify
+        (bool success, ) = address(proxy).call(
+            abi.encodeWithSignature('listInMarketplace(address,address,uint8)', address(collection), ADMIN, 5)
+        );
+        assertTrue(success);
+
+        (bool ok, bytes memory collections) = address(proxy).call(abi.encodeWithSignature('getCollections()'));
+        assertTrue(ok);
+        assertEq(abi.decode(collections, (address[]))[0], address(collection));
 
         // cleanup
         vm.stopPrank();
