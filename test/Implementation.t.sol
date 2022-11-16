@@ -157,6 +157,22 @@ contract MarketplaceV1Test is Test {
         assertEq(collections.length, 0);
     }
 
+    function testShouldNotAllowToListACollectionWithExcessRoyalties() public {
+        // setup
+        address collection = address(pretty);
+        vm.prank(MARKETPLACE_CONTRACT_OWNER);
+
+        // vm verify
+        vm.expectRevert(MarketplaceV1.ExceededAllowedRoyalties.selector);
+
+        // exercise
+        marketplace.listInMarketplace(collection, CREATOR, 9901);
+
+        // verify
+        address[] memory collections = marketplace.getCollections();
+        assertEq(collections.length, 0);
+    }
+
     function testShouldNotAllowToListACollectionIfNotMarketplaceOwner() public {
         // setup
         address collection = address(pretty);
@@ -200,10 +216,10 @@ contract MarketplaceV1Test is Test {
         marketplace.listInMarketplace(collection, CREATOR, 200);
 
         // exercise
-        marketplace.updateCollectionRoyalties(collection, 500);
+        marketplace.updateCollectionRoyalties(collection, 9900);
 
         // verify
-        assertEq(marketplace.getCollectionRoyalties(collection), 500);
+        assertEq(marketplace.getCollectionRoyalties(collection), 9900);
 
         // cleanup
         vm.stopPrank();
@@ -229,7 +245,7 @@ contract MarketplaceV1Test is Test {
         vm.expectRevert(MarketplaceV1.InvalidCollection.selector);
 
         // exercise
-        marketplace.updateCollectionRoyalties(collection, 5);
+        marketplace.updateCollectionRoyalties(collection, 500);
     }
 
     function testShouldNotAllowToUpdateRoyaltiesIfNotMarketplaceOwner() public {
@@ -241,7 +257,23 @@ contract MarketplaceV1Test is Test {
         vm.expectRevert(MarketplaceV1.Unauthorized.selector);
 
         // exercise
-        marketplace.updateCollectionRoyalties(collection, 5);
+        marketplace.updateCollectionRoyalties(collection, 500);
+    }
+
+    function testShouldNotAllowToUpdateRoyaltiesIfExcessRoyalties() public {
+        // setup
+        address collection = address(pretty);
+        vm.startPrank(MARKETPLACE_CONTRACT_OWNER);
+        marketplace.listInMarketplace(collection, CREATOR, 200);
+
+        // vm verify
+        vm.expectRevert(MarketplaceV1.ExceededAllowedRoyalties.selector);
+
+        // exercise
+        marketplace.updateCollectionRoyalties(collection, 9901);
+
+        // cleanup
+        vm.stopPrank();
     }
 
     function testShouldAllowToListNft() public {

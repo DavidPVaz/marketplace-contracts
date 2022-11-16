@@ -16,6 +16,7 @@ contract MarketplaceV1 is Initializable {
         uint256 price;
     }
 
+    uint16 private constant MAX_BASIS_POINTS = 10000;
     bool private lock;
     uint16 public percentageFee;
     address public owner;
@@ -39,6 +40,7 @@ contract MarketplaceV1 is Initializable {
     error NotListed();
     error InvalidPayment();
     error IsZeroAddress();
+    error ExceededAllowedRoyalties();
 
     modifier onlyOwner() {
         if (msg.sender != owner) {
@@ -101,6 +103,7 @@ contract MarketplaceV1 is Initializable {
      */
     function updateCollectionRoyalties(address collection, uint16 royalties) external onlyOwner {
         _assertIsValidCollection(collection);
+        _assertIsValidRoyalties(royalties);
 
         listedCollections[collection].royalties = royalties;
     }
@@ -119,6 +122,7 @@ contract MarketplaceV1 is Initializable {
     ) external onlyOwner {
         _assertIsTheCollectionOwner(collection, creator);
         _assertIsNotListed(collection);
+        _assertIsValidRoyalties(royalties);
 
         listedCollections[collection] = Collection({listed: true, royalties: royalties, collection: collection});
         collections.push(collection);
@@ -430,5 +434,23 @@ contract MarketplaceV1 is Initializable {
         }
 
         revert IsZeroAddress();
+    }
+
+    /**
+     * @notice Assert that `royalties` are valid
+     * @dev Throws unless `royalties` are valid.
+     * This contract is using basis points to calculate percentages, which means that `MAX_BASIS_POINTS` = 10000(100%).
+     * The sum of `royalties` with marketplace `percentageFee` must not exceed `MAX_BASIS_POINTS`.
+     * eg. `royalties` => 10000(100%) + `percentageFee` => 100(1%) = 101% -> WRONG
+     *     `royalties` => 9900(99%) + `percentageFee` => 100(1%) = 100%   -> CORRECT
+     *
+     * @param royalties The royalties value in basis points. 100 = 1%;
+     */
+    function _assertIsValidRoyalties(uint16 royalties) private view {
+        if (royalties + percentageFee <= MAX_BASIS_POINTS) {
+            return;
+        }
+
+        revert ExceededAllowedRoyalties();
     }
 }
