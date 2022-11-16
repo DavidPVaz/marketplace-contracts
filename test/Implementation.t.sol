@@ -516,6 +516,39 @@ contract MarketplaceV1Test is Test {
         assertEq(BUYER.balance, 0);
     }
 
+    function testShouldAllowToBuyNftWithMaxRoyalties() public {
+        // setup
+        uint256 expectedMarketplaceBalance = 0.01 ether;
+        uint256 expectedCreatorBalance = 0.99 ether;
+        uint256 expectedSellerBalance = 0 ether;
+        uint256 nftId = 1;
+        uint256 price = 1 ether;
+        address collection = address(pretty);
+        vm.deal(PRETTY_MINTER, 0 ether);
+        vm.prank(MARKETPLACE_CONTRACT_OWNER);
+        marketplace.listInMarketplace(collection, CREATOR, 9900);
+        vm.prank(PRETTY_MINTER);
+        pretty.approve(address(marketplace), nftId); // setting approve first
+        vm.prank(PRETTY_MINTER);
+        marketplace.list(collection, nftId, price);
+        vm.deal(BUYER, price);
+        vm.prank(BUYER);
+
+        // vm verify
+        vm.expectEmit(true, true, false, true);
+        emit Bought(collection, BUYER, nftId, price);
+
+        // exercise
+        marketplace.buy{value: price}(collection, nftId);
+
+        // verify
+        assertEq(pretty.ownerOf(nftId), BUYER);
+        assertEq(address(marketplace).balance, expectedMarketplaceBalance);
+        assertEq(PRETTY_MINTER.balance, expectedSellerBalance);
+        assertEq(CREATOR.balance, expectedCreatorBalance);
+        assertEq(BUYER.balance, 0);
+    }
+
     function testShouldNotAllowToBuyInvalidCollection() public {
         // setup
         uint256 nftId = 1;
