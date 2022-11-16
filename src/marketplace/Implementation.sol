@@ -6,7 +6,7 @@ import 'lib/openzeppelin-contracts/contracts/proxy/utils/Initializable.sol';
 contract MarketplaceV1 is Initializable {
     struct Collection {
         bool listed;
-        uint8 royalties;
+        uint16 royalties;
         address collection;
     }
 
@@ -17,7 +17,7 @@ contract MarketplaceV1 is Initializable {
     }
 
     bool private lock;
-    uint8 public percentageFee;
+    uint16 public percentageFee;
     address public owner;
 
     // Listed collections on marketplace - contract addresses
@@ -58,7 +58,7 @@ contract MarketplaceV1 is Initializable {
 
     /* ---------- EXTERNAL ----------  */
 
-    function initialize(address newOwner, uint8 fee) external initializer {
+    function initialize(address newOwner, uint16 fee) external initializer {
         _assertIsNotZeroAddress(newOwner);
 
         owner = newOwner;
@@ -85,11 +85,11 @@ contract MarketplaceV1 is Initializable {
     }
 
     /**
-     * @notice Set marketplace fee
+     * @notice Set marketplace fee in basis points. 150 basis points means 1.5%
      *
      * @param fee The new marketplace fee
      */
-    function setFee(uint8 fee) external onlyOwner {
+    function setFee(uint16 fee) external onlyOwner {
         percentageFee = fee;
     }
 
@@ -97,9 +97,9 @@ contract MarketplaceV1 is Initializable {
      * @notice Updates `collection` creator royalties
      *
      * @param collection The contract address of the collection
-     * @param royalties The new creator royalties percentage
+     * @param royalties The new creator royalties percentage in basis points. 100 basis points means 1%
      */
-    function updateCollectionRoyalties(address collection, uint8 royalties) external onlyOwner {
+    function updateCollectionRoyalties(address collection, uint16 royalties) external onlyOwner {
         _assertIsValidCollection(collection);
 
         listedCollections[collection].royalties = royalties;
@@ -110,12 +110,12 @@ contract MarketplaceV1 is Initializable {
      *
      * @param collection The contract address of the collection
      * @param creator The address of the collection's creator
-     * @param royalties The creator royalties percentage
+     * @param royalties The creator royalties percentage in basis points. 100 basis points = 1%
      */
     function listInMarketplace(
         address collection,
         address creator,
-        uint8 royalties
+        uint16 royalties
     ) external onlyOwner {
         _assertIsTheCollectionOwner(collection, creator);
         _assertIsNotListed(collection);
@@ -138,9 +138,9 @@ contract MarketplaceV1 is Initializable {
      *
      * @param collection The contract address of the collection
      *
-     * @return uint8 the collection royalties percentage
+     * @return uint16 the collection royalties percentage in basis points. 100 basis points = 1%
      */
-    function getCollectionRoyalties(address collection) external view returns (uint8) {
+    function getCollectionRoyalties(address collection) external view returns (uint16) {
         _assertIsValidCollection(collection);
 
         return listedCollections[collection].royalties;
@@ -264,15 +264,15 @@ contract MarketplaceV1 is Initializable {
     }
 
     /**
-     * @notice Calculate the total amount of fee for `price`
+     * @notice Calculate the total amount of fee for `price` with basis points. 100 basis points = 1%
      *
      * @param price the price of the nft
      * @param fee the fee
      *
      * @return uint256 the fee value
      */
-    function _calculateFee(uint256 price, uint8 fee) private pure returns (uint256) {
-        return (price * fee) / 100;
+    function _calculateFee(uint256 price, uint16 fee) private pure returns (uint256) {
+        return (price * fee) / 10000;
     }
 
     /**

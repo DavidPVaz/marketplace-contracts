@@ -27,7 +27,7 @@ contract MarketplaceTest is Test {
 
     function testShouldSuccessfullyCreateProxy() public {
         // setup
-        uint8 initialFee = 5;
+        uint16 initialFee = 500;
         vm.startPrank(ADMIN);
 
         // exercise
@@ -43,17 +43,17 @@ contract MarketplaceTest is Test {
 
     function testShouldSuccessfullyDelegateCallIfAdmin() public {
         // setup
-        uint8 initialFee = 5;
-        uint8 newFee = 10;
+        uint16 initialFee = 500;
+        uint16 newFee = 1000;
         vm.startPrank(ADMIN);
         proxy = new MarketplaceProxy(address(implementation), initialFee);
 
         // exercise && verify
-        (bool success, ) = address(proxy).call(abi.encodeWithSignature('setFee(uint8)', newFee));
+        (bool success, ) = address(proxy).call(abi.encodeWithSignature('setFee(uint16)', newFee));
         assertTrue(success);
 
         (, bytes memory updatedFee) = address(proxy).call(abi.encodeWithSignature('percentageFee()'));
-        assertEq(abi.decode(updatedFee, (uint8)), newFee);
+        assertEq(abi.decode(updatedFee, (uint16)), newFee);
 
         // cleanup
         vm.stopPrank();
@@ -61,13 +61,13 @@ contract MarketplaceTest is Test {
 
     function testShouldSuccessfullyListACollectionInMarketplace() public {
         // setup
-        uint8 initialFee = 5;
+        uint16 initialFee = 500;
         vm.startPrank(ADMIN);
         proxy = new MarketplaceProxy(address(implementation), initialFee);
 
         // exercise && verify
         (bool success, ) = address(proxy).call(
-            abi.encodeWithSignature('listInMarketplace(address,address,uint8)', address(collection), ADMIN, 5)
+            abi.encodeWithSignature('listInMarketplace(address,address,uint16)', address(collection), ADMIN, 500)
         );
         assertTrue(success);
 
@@ -81,7 +81,7 @@ contract MarketplaceTest is Test {
 
     function testShouldSuccessfullyDelegateCallIfNotAdmin() public {
         // setup
-        uint8 initialFee = 5;
+        uint16 initialFee = 500;
         vm.prank(ADMIN);
         proxy = new MarketplaceProxy(address(implementation), initialFee);
 
@@ -94,7 +94,7 @@ contract MarketplaceTest is Test {
             abi.encodeWithSignature('percentageFee()')
         );
         assertTrue(successPercentageCall);
-        assertEq(abi.decode(initialPercentageFee, (uint8)), initialFee);
+        assertEq(abi.decode(initialPercentageFee, (uint16)), initialFee);
 
         (bool ok, bytes memory collections) = address(proxy).call(abi.encodeWithSignature('getCollections()'));
         assertTrue(ok);
@@ -105,7 +105,9 @@ contract MarketplaceTest is Test {
 
         vm.expectRevert(MarketplaceV1.Unauthorized.selector);
 
-        (bool successfulCall, bytes memory result) = address(proxy).call(abi.encodeWithSignature('setFee(uint8)', 20));
+        (bool successfulCall, bytes memory result) = address(proxy).call(
+            abi.encodeWithSignature('setFee(uint16)', 2000)
+        );
         assertTrue(successfulCall);
         assertFalse(abi.decode(result, (bool)));
 
@@ -116,14 +118,16 @@ contract MarketplaceTest is Test {
 
     function testShouldSuccessfullyDelegateCallAndFailIfNotAdminOrOwner() public {
         // setup
-        uint8 initialFee = 5;
+        uint16 initialFee = 500;
         vm.prank(ADMIN);
         proxy = new MarketplaceProxy(address(implementation), initialFee);
 
         // exercise && verify
         vm.expectRevert(MarketplaceV1.Unauthorized.selector);
 
-        (bool successfulCall, bytes memory result) = address(proxy).call(abi.encodeWithSignature('setFee(uint8)', 20));
+        (bool successfulCall, bytes memory result) = address(proxy).call(
+            abi.encodeWithSignature('setFee(uint16)', 2000)
+        );
         assertTrue(successfulCall);
         assertFalse(abi.decode(result, (bool)));
 
