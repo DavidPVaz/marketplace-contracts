@@ -7,6 +7,8 @@ import '../src/marketplace/Implementation.sol';
 import '../src/marketplace/Marketplace.sol';
 import '../src/nft/Pretty.sol';
 
+contract V2 is MarketplaceV1 {}
+
 contract MarketplaceTest is Test {
     address public constant ADMIN = address(1000);
     MarketplaceV1 public implementation;
@@ -134,5 +136,27 @@ contract MarketplaceTest is Test {
         vm.expectRevert();
 
         proxy.implementation();
+    }
+
+    function testShouldSuccessfullyUpgradeToImplementation() public {
+        // setup
+        uint16 initialFee = 500;
+        vm.startPrank(ADMIN);
+        V2 newImplementation = new V2();
+        proxy = new MarketplaceProxy(address(implementation), initialFee);
+
+        // exercise
+        proxy.upgradeTo(address(newImplementation));
+
+        // verify
+        assertEq(proxy.implementation(), address(newImplementation));
+        (bool successPercentageCall, bytes memory initialPercentageFee) = address(proxy).call(
+            abi.encodeWithSignature('percentageFee()')
+        );
+        assertTrue(successPercentageCall);
+        assertEq(abi.decode(initialPercentageFee, (uint16)), initialFee);
+
+        // cleanup
+        vm.stopPrank();
     }
 }
