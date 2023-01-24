@@ -3,7 +3,7 @@
 ## **Project Description**:
 
 - This project consists of Solidity Smart Contracts and also a DAPP, but only the smart contracts are shared in this repo. It was developed as a capstone project for the Artemis Academy Web3 bootcamp.
-- Although there a lot more features that could be added, this is a MVP of the idealized product, were the main concern was to provide a fully functional MVP.
+- This project backend and frontend was developed in two weeks. My main concern was to provide a fully functional MVP.
 - The first step was to implement an ERC721 contract. Metadata was also generated an uploaded to IPFS. There was no point in having a marketplace if I don't have a NFT collection to list there. 
 Once completed, I began the marketplace contract development with a Proxy pattern. It goes without saying, all contracts are tested.
 - The contracts are deployed to Goerli testnet and the addresses are as follow:
